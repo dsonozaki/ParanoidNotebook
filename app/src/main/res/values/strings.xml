@@ -1,0 +1,103 @@
+<resources>
+  <string name="app_name">Блокнот</string>
+  <string name="help">Помощь</string>
+  <string name="back">Назад</string>
+  <string name="settings">Настройки</string>
+  <string name="remove">Автоудаление</string>
+  <string name="about">О Paranoid Notebook</string>
+  <string name="start">Запуск автоудаления</string>
+  <string name="change_timeout">Изменить тайм-аут</string>
+  <string name="clear">Очистить список</string>
+  <string name="change_passwords">Изменить пароли</string>
+  <string name="deletion_settings">Настроить удаление</string>
+  <string name="aboutprog">О программе</string>
+  <string name="maxpr">Приоритет: сначала максимальный</string>
+  <string name="minpr">Приоритет: сначала минимальный</string>
+  <string name="alphabet">Путь: по алфавиту</string>
+  <string name="disalphabet">Путь: в обратном порядке</string>
+  <string name="sizebig">Размер: сначала большие</string>
+  <string name="sizesmall">Размер: сначала маленькие</string>
+  <string name="sort">Сортировать</string>
+  <string name="entertext">Введите текст</string>
+  <string name="true_app_name">Paranoid Notebook</string>
+  <string name="settingsPass">Пароль настроек</string>
+  <string name="mainPass">Главный пароль</string>
+  <string name="setPasswords">Установите пароли, не включающие друг друга</string>
+  <string name="next">Далее</string>
+  <string name="ok">OK</string>
+  <string name="cancel">Oтмена</string>
+  <string name="apply">Подтвердите действие</string>
+  <string name="want_to_clear">Вы собираетесь очистить все файлы.</string>
+  <string name="long_help"><![CDATA[<p>В этом меню вы можете настроить автоматическое удаление файлов (подробнее о функционале приложения в меню "о программе").</p>
+<p>Чтобы добавить новые файлы для автоудаления, нажмите на кнопку <strong>+.&nbsp;</strong></p>
+<p>Чтобы удалить файл из списка, свайпните файл влево и нажмите на иконку <strong>удаления</strong>.</p>
+<p>Чтобы задать таймаут до удаления файлов, нажмите на иконку <strong>таймера</strong>.&nbsp;</p>
+<p>Чтобы запустить/остановить запланированное автоудаление, нажмите на иконку <strong>запуска/паузы</strong>.</p>
+<p>Вы можете настроить приоритеты файлов. Чем выше приоритет, тем раньше будет удалён файл.&nbsp; Чтобы редактировать приоритеты, свайпните файл влево и нажмите на иконку <strong>редактирования</strong>.</p>]]></string>
+  <string name="please_set_timeout1">Не установлен тайм-аут</string>
+  <string name="please_set_timeout2">Пожалуйста, установите тайм-аут, прежде чем активировать режим автоудаления</string>
+  <string name="final_explanation">Все данные в списке будут удаляться через %1$s секунд после загрузки устройства, если Вы не введёте за это время главный пароль.</string>
+  <string name="stupid_chinese_phone"><![CDATA[<br/><strong>Важно</strong>: возможно, на Вашем устройстве приложению нужно выдать разрешение на автозапуск вручную. Приложение попытается перекинуть Вас в окно настроек автозапуска.]]></string>
+  <string name="are_you_sure_autodelete">Вы уверены, что хотите запустить автоудаление?</string>
+  <string name="timeout_please">Введите тайм-аут в секундах</string>
+  <string name="correction"><![CDATA[<p><strong>Уточнение</strong>: обратный отсчёт начнётся не сразу после загрузки, а когда ваше устройство "прогрузится".&nbsp;</p>]]></string>
+  <string name="changePriority">Измените приоритет файла</string>
+  <string name="file">Файл: %1$s</string>
+  <string name="fileExists">Вы попытались добавить файл %1$s, уже присутствующий в списке</string>
+  <string name="number_big_limit">Пожалуйста, введите положительное число меньше 4294967295</string>
+  <string name="number_small_limit">Пожалуйста, введите положительное число меньше 1000</string>
+  <string name="passwords_intersection">Ваш главный пароль %1$s включает в себя Ваш пароль для настроек %2$s</string>
+  <string name="about_long"><![CDATA[
+Добро пожаловать в <b>Paranoid Notebook</b> - дебютное приложение&nbsp;<b><a href="https://github.com/dsonozaki">0N1GAFUCH1</a></b><br>
+<p>Как (не) говорил Сунь-цзы, лучшая битва - это та, которой не было. Paranoid Notebook&nbsp;позволит Вам избежать боя за ваши конфиденциальные данные со злоумышленниками, заполучившими Ваше устройство. Ваш пароль не удастся взломать или выведать, если никто не будет даже пытаться этого сделать, так как не будет знать о самом его существовании.</p>
+<p>Paranoid Notebook маскируется под обычный блокнот - вы можете записать сюда что угодно, записи будут сохраняться и загружаться автоматически. Однако если в первую строку "блокнота" записать <strong>пароль от настроек</strong>, то он позволит вам переместиться в меню. В настройках вы можете задать список данных, которые вы хотите защитить, и установить тайм-аут. При каждом запуске устройства приложение по прошествии заданного тайм-аута будет безвозвратно уничтожать все данные с помощью алгоритма <a href="https://www.lifewire.com/data-sanitization-methods-2626133#toc-hmg-is5">HMG IS5</a>.&nbsp;Чтобы предотвратить это, после каждого запуска устройства необходимо успеть ввести в первую строку "блокнота"&nbsp;<strong>главный пароль</strong>&nbsp;до начала уничтожения данных.</p>
+<p>Paranoid Notebook подходит для случаев, когда злоумышленниким могут получить полный физический доступ к устройству,&nbsp; способны установить на него рут-права или изучить его память с помощью специального софта/железа -&nbsp; удаление файлов безвовзвратно, приложение хранит в зашифрованном виде ваши пароли и список ваших данных.</p>]]></string>
+  <string name="hint"><![CDATA[<br>Введите ваш <b>пароль от настроек</b> в верхнюю строку.]]></string>
+  <string name="secret_hello">Вы открыли секретные настройки!</string>
+  <string name="too_late">Поздно - все данные, которые были добавлены в список до прошлой перезагрузки, удалены</string>
+  <string name="part_saved">Часть данных уже удалена, но некоторые могли сохраниться</string>
+  <string name="full_saved">Удаление данных предотвращено</string>
+  <string name="autodelete">Автоудаление</string>
+  <string name="size">Размер: %1$d%2$s</string>
+  <string name="priority">Приоритет: %1$d</string>
+  <string name="frequentDeletion">Возникла проблема с удалением файла %1$s. Возможно, Вы удаляете слишком часто, попробуйте ещё раз</string>
+  <string name="about_file_title">Сведения о файле</string>
+  <string name="about_file"><![CDATA[Название: %1$s<br>%2$s<br>%3$s]]></string>
+  <string name="sdcard_title">Предоставьте приложению доступ к SD-карте</string>
+  <string name="sdcard_explanation"><![CDATA[<p>Кажется, некоторые из добавленных вами файлов находятся на SD-карте. Пожалуйста, нажмите "ок", чтобы перейти в файловый менеджер и выбрать SD-карту.</p>
+<p><strong>Предупреждение</strong>: скорость стирания файлов с SD-карты значительно ниже, чем скорость стирания из основной памяти.</p>]]></string>
+  <string name="log">Логи</string>
+  <string name="select_day">Открыть старые логи</string>
+  <string name="select_timeout">Установите время хранения логов</string>
+  <string name="enter">Кто-то вошёл в секретные настройки Paranoid Notebook</string>
+  <string name="deletion_launched">Устройство запущено</string>
+  <string name="clear_logs">Очистить логи за день</string>
+  <string name="deletion_confirmed">Начало обратного отчёта до удаления файлов. До уничтожения данных осталось %1$s секунд.</string>
+  <string name="deletion_declined">Удаление файлов отменено</string>
+  <string name="deletion_started">Удаление файлов началось</string>
+  <string name="deletion_file">Файл %1$s удаляется</string>
+  <string name="df_not_found">При удалении файла/папка %1$s возникла ошибка: файл/папка не найден</string>
+  <string name="deletion_folder">Папка %1$s удаляется</string>
+  <string name="deletion_success">Файл %1$s удалён</string>
+  <string name="deletion_failed">Файл %1$s не удалён</string>
+  <string name="folder_deletion_success">Удаление папки %1$s завершено: уничтожено %2$d процентов файлов</string>
+  <string name="folder_deletion_failed">Папка %1$s не удалена: уничтожено %2$d процентов файлов.</string>
+  <string name="file_deletion_error">При удалении файла %1$s возникла ошибка: %2$s</string>
+  <string name="folder_deletion_error">При удалении папки %1$s возникла ошибка: %2$s</string>
+  <string name="deletion_complete">Удаление данных завершено</string>
+  <string name="access_error">Не удалось получить доступ к файлу</string>
+  <string name="not_found_error">Файл не найден</string>
+  <string name="select_date">Выберите день</string>
+  <string name="logs_help">Здесь Вы можете посмотреть логи приложения, узнать, когда в него входили и как прошло удаление файлов. Логи автоматически удаляются по прошествии 7 дней, но здесь Вы можете изменить этот тайм-аут.</string>
+  <string name="test">Это папка</string>
+  <string name="refresh_logs">Обновить логи</string>
+  <string name="fab_text">Добавить файл/папку</string>
+  <string name="add_folder">Добавить папку</string>
+  <string name="add_file">Добавить файл</string>
+  <string name="access_denied">Вы не дали доступ к файлам, вероятно возникновение багов</string>
+  <string name="problematic_file">Вы добавили в список удаляемых файл %1$s из провайдеров "надавние", "изображения", "видео", "аудио" или облачных хранилищ, хотя я просил Вас так не делать. Файл не добавлен.</string>
+  <string name="attention">Внимание!</string>
+  <string name="trouble_with_mediafiles"><![CDATA[<pre><span>Убедительная просьба - когда перейдёте в менеджер файлов, не добавляйте файлы из вкладок </span><strong>"Недавние"</strong><span>, </span><strong>"Изображения"</strong><span> и т.д. Программа будет работать только с файлами, добавленными через вкладку <strong>"</strong></span><strong>%1$s</strong><span><strong>"</strong> - перейдите прямо к нужному файлу через все папки.</span></pre>]]></string>
+  <string name="file_removed">Не удалось добавить файл</string>
+  <string name="folder_removed">Не удалось добавить папку</string>
+</resources>
