@@ -8,7 +8,7 @@
 
     <variable
       name="viewmodel"
-      type="com.example.cmd.viewmodel.MainViewModel" />
+      type="com.example.cmd.presentation.viewmodels.MainVM" />
   </data>
 
   <androidx.constraintlayout.widget.ConstraintLayout

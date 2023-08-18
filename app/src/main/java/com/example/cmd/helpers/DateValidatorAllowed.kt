@@ -4,7 +4,8 @@ import android.os.Parcel
 import android.os.Parcelable.Creator
 import com.google.android.material.datepicker.CalendarConstraints.DateValidator
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 //DateValidator для Calendar Picker. Позволяет проверять, находится ли выбранная дата в множестве разрешённых дат.
 class DateValidatorAllowed(private val allowed: Set<String>) : DateValidator {

@@ -7,7 +7,7 @@
 
     <variable
       name="viewmodel"
-      type="com.example.cmd.viewmodel.DeletionSettingsVM" />
+      type="com.example.cmd.presentation.viewmodels.DeletionSettingsVM" />
   </data>
 
   <androidx.constraintlayout.widget.ConstraintLayout

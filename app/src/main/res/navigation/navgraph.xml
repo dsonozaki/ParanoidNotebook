@@ -3,75 +3,66 @@
   xmlns:app="http://schemas.android.com/apk/res-auto"
   xmlns:tools="http://schemas.android.com/tools"
   android:id="@+id/navgraph"
-  app:startDestination="@id/mainFragment">
+  app:startDestination="@id/navigation">
 
   <fragment
-    android:id="@+id/mainFragment"
-    android:name="com.example.cmd.screens.MainFragment"
-    android:label="MainFragment"
-    tools:layout="@layout/main_fragment">
-    <action
-      android:id="@+id/showAppInfo"
-      app:destination="@id/aboutFragment" />
-    <action
-      android:id="@+id/toDeletionSettings"
-      app:destination="@id/deletionSettingsFragment" />
-    <action
-      android:id="@+id/openLogs"
-      app:destination="@id/logsFragment" />
-    <action
-      android:id="@+id/editPasswords"
-      app:destination="@id/editPasswordsFragment" />
-  </fragment>
-  <fragment
     android:id="@+id/aboutFragment"
-    android:name="com.example.cmd.screens.AboutFragment"
+    android:name="com.example.cmd.presentation.fragments.AboutFragment"
     android:label="AboutFragment"
-    tools:layout="@layout/about_fragment"/>
+    tools:layout="@layout/about_fragment" />
   <dialog
     android:id="@+id/infoDialog"
-    android:tag="info"
-    android:name="com.example.cmd.dialogs.InfoDialog"
-    android:label="InfoDialog" />
+    android:name="com.example.cmd.presentation.dialogs.InfoDialog"
+    android:label="InfoDialog"
+    android:tag="info" />
   <dialog
     android:id="@+id/inputDialog"
-    android:tag="input"
-    android:name="com.example.cmd.dialogs.InputDialog"
-    android:label="InputDialog" />
+    android:name="com.example.cmd.presentation.dialogs.InputDialog"
+    android:label="InputDialog"
+    android:tag="input" />
   <dialog
     android:id="@+id/questionDialog"
-    android:tag="question"
-    android:name="com.example.cmd.dialogs.QuestionDialog"
-    android:label="QuestionDialog" />
+    android:name="com.example.cmd.presentation.dialogs.QuestionDialog"
+    android:label="QuestionDialog"
+    android:tag="question" />
   <fragment
     android:id="@+id/deletionSettingsFragment"
-    android:name="com.example.cmd.screens.DeletionSettingsFragment"
+    android:name="com.example.cmd.presentation.fragments.DeletionSettingsFragment"
     android:label="DeletionSettingsFragment"
-    tools:layout="@layout/deletion_settings">
-    <action
-      android:id="@+id/filepicker"
-      app:destination="@id/backHandlingFilePickerFragment" />
-  </fragment>
+    tools:layout="@layout/deletion_settings"/>
   <fragment
     android:id="@+id/logsFragment"
-    android:name="com.example.cmd.screens.LogsFragment"
+    android:name="com.example.cmd.presentation.fragments.LogsFragment"
     android:label="LogsFragment"
-    tools:layout="@layout/about_fragment"/>
-  <fragment
-    android:id="@+id/editPasswordsFragment"
-    android:name="com.example.cmd.screens.EditPasswordsFragment"
-    android:label="EditPasswordsFragment"
-    tools:layout="@layout/edit_passwords">
-    <action
-      android:id="@+id/passwordsInitialized"
-      app:destination="@id/mainFragment" />
-  </fragment>
-  <fragment
-    android:id="@+id/backHandlingFilePickerFragment"
-    android:name="com.example.cmd.filePicker.BackHandlingFilePickerFragment"
-    android:label="BackHandlingFilePickerFragment" >
-    <action
-      android:id="@+id/action_backHandlingFilePickerFragment_to_deletionSettingsFragment"
-      app:destination="@id/deletionSettingsFragment" />
-  </fragment>
+    tools:layout="@layout/about_fragment" />
+  <navigation android:id="@+id/navigation"
+    app:startDestination="@id/mainFragment">
+    <fragment
+      android:id="@+id/mainFragment"
+      android:name="com.example.cmd.presentation.fragments.MainFragment"
+      android:label="MainFragment"
+      tools:layout="@layout/main_fragment">
+      <action
+        android:id="@+id/showAppInfo"
+        app:destination="@id/aboutFragment" />
+      <action
+        android:id="@+id/toDeletionSettings"
+        app:destination="@id/deletionSettingsFragment" />
+      <action
+        android:id="@+id/openLogs"
+        app:destination="@id/logsFragment" />
+      <action
+        android:id="@+id/editPasswords"
+        app:destination="@id/editPasswordsFragment" />
+    </fragment>
+    <fragment
+      android:id="@+id/editPasswordsFragment"
+      android:name="com.example.cmd.presentation.fragments.EditPasswordsFragment"
+      android:label="EditPasswordsFragment"
+      tools:layout="@layout/edit_passwords">
+      <action
+        android:id="@+id/passwordsInitialized"
+        app:destination="@id/mainFragment" />
+    </fragment>
+  </navigation>
 </navigation>

@@ -8,16 +8,16 @@ import androidx.recyclerview.widget.SortedList
 import androidx.recyclerview.widget.SortedListAdapterCallback
 import androidx.room.Room
 import com.anggrayudi.storage.extension.isTreeDocumentFile
-import com.example.cmd.adapter.DataAdapter
-import com.example.cmd.db.MyFile
-import com.example.cmd.db.ShredDao
-import com.example.cmd.db.ShredData
+import com.example.cmd.data.db.MyFileDbModel
+import com.example.cmd.data.db.MyFileDao
+import com.example.cmd.data.db.FileDataBase
+import com.example.cmd.presentation.adapter.DataAdapter
 import net.sqlcipher.database.SupportFactory
 
 //DataCallback для вычисления изменений в списках
 class DataCallback(
-  private val oldList: List<MyFile>,
-  private val newList: List<MyFile>,
+  private val oldList: List<MyFileDbModel>,
+  private val newList: List<MyFileDbModel>,
   private val priority: MySortedList.Priority
 ) : DiffUtil.Callback() {
   override fun getOldListSize(): Int = oldList.size
@@ -47,11 +47,11 @@ class DataCallback(
 //Класс для хранения данных о файлах, которые должны быть удалены
 class MySortedList(private val applicationContext: Context) {
   lateinit var adapter: DataAdapter
-  lateinit var data: SortedList<MyFile> //основной, обновляемый список файлов
+  lateinit var data: SortedList<MyFileDbModel> //основной, обновляемый список файлов
   private var initialized = false
   lateinit var priorityType: Priority
-  private lateinit var fileDao: ShredDao
-  private var items: List<MyFile> = listOf()
+  private lateinit var fileDao: MyFileDao
+  private var items: List<MyFileDbModel> = listOf()
 
   //установка сортировки по приоритету
   fun init() {
@@ -65,7 +65,7 @@ class MySortedList(private val applicationContext: Context) {
   }
 
   //добавление файла в data
-  fun add(file: MyFile): Boolean {
+  fun add(file: MyFileDbModel): Boolean {
     return if (data.indexOf(file) == -1) {
       data.add(file)
       true
@@ -87,17 +87,17 @@ class MySortedList(private val applicationContext: Context) {
   }
 
   //Скачивание списка файлов из базы данных
-  fun getList(key: String): List<MyFile> {
+  fun getList(key: String): List<MyFileDbModel> {
     val db = Room.databaseBuilder(
       applicationContext,
-      ShredData::class.java, "ShredData"
+      FileDataBase::class.java, "ShredData"
     ).openHelperFactory(SupportFactory(key.toByteArray())).build()
     fileDao = db.shredDao()
     return fileDao.getAll()
   }
 
   //удаление файла из базы данных
-  fun delete(file: MyFile) {
+  fun delete(file: MyFileDbModel) {
     fileDao.delete(file)
   }
 
@@ -112,8 +112,8 @@ class MySortedList(private val applicationContext: Context) {
   }
 
   //преобразование data в список
-  private fun getList(): List<MyFile> {
-    val list = mutableListOf<MyFile>()
+  private fun getList(): List<MyFileDbModel> {
+    val list = mutableListOf<MyFileDbModel>()
     for (i in 0 until data.size()) {
       list.add(data[i])
     }
@@ -131,9 +131,9 @@ class MySortedList(private val applicationContext: Context) {
       false -> listOf()
     }
     data = SortedList(
-      MyFile::class.java,
-      object : SortedListAdapterCallback<MyFile>(adapter) {
-        override fun compare(o1: MyFile, o2: MyFile): Int =
+      MyFileDbModel::class.java,
+      object : SortedListAdapterCallback<MyFileDbModel>(adapter) {
+        override fun compare(o1: MyFileDbModel, o2: MyFileDbModel): Int =
           when (priority) {
             Priority.PATH_DESCENDING ->
               o2.name.lowercase().compareTo(o1.name.lowercase())
@@ -150,8 +150,8 @@ class MySortedList(private val applicationContext: Context) {
           }
 
         override fun areContentsTheSame(
-          oldItem: MyFile,
-          newItem: MyFile
+          oldItem: MyFileDbModel,
+          newItem: MyFileDbModel
         ): Boolean = when (priority) {
           Priority.PATH_ASCENDING, Priority.PATH_DESCENDING ->
             oldItem.path == newItem.path
@@ -162,8 +162,8 @@ class MySortedList(private val applicationContext: Context) {
         }
 
         override fun areItemsTheSame(
-          item1: MyFile,
-          item2: MyFile
+          item1: MyFileDbModel,
+          item2: MyFileDbModel
         ): Boolean = item1.path == item2.path
 
       })

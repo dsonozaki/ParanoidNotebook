@@ -1,29 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.example.cmd">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
 
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+  <uses-permission
+    android:name="android.permission.READ_EXTERNAL_STORAGE"
     android:maxSdkVersion="32" />
 
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+  <uses-permission
+    android:name="android.permission.WRITE_EXTERNAL_STORAGE"
     android:maxSdkVersion="29" />
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
   <uses-permission android:name="android.permission.QUICKBOOT_POWERON" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
-  <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
   <application
-  android:allowBackup="true"
-  android:icon="@mipmap/ic_launcher"
-  android:label="@string/app_name"
-  android:roundIcon="@mipmap/ic_launcher_round"
-  android:supportsRtl="true"
-  android:theme="@style/Theme.Cmd"
-  android:requestLegacyExternalStorage="true">
+    android:name=".presentation.NotebookApp"
+    android:allowBackup="true"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:requestLegacyExternalStorage="true"
+    android:roundIcon="@mipmap/ic_launcher_round"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.Cmd">
 
 
     <receiver
-      android:name="com.example.cmd.services.BootReceiver"
+      android:name="com.example.cmd.data.services.BootReceiver"
       android:directBootAware="true"
       android:exported="false"
       android:label="BootReceiver">
@@ -35,7 +37,7 @@
     </receiver>
 
     <activity
-      android:name="com.example.cmd.MainActivity"
+      android:name="com.example.cmd.presentation.MainActivity"
       android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
