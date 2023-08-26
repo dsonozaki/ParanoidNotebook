@@ -14,7 +14,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.cmd.R
 import com.example.cmd.databinding.LogBinding
 import com.example.cmd.presentation.factory.LogsFactory
-import com.example.cmd.helpers.DateValidatorAllowed
+import com.example.cmd.presentation.utils.DateValidatorAllowed
 import com.example.cmd.helpers.DialogHelper
 import com.example.cmd.presentation.viewmodels.LogsVM
 import com.google.android.material.datepicker.CalendarConstraints

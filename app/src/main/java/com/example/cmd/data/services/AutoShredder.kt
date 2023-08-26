@@ -1,219 +1,222 @@
 package com.example.cmd.data.services
 
 import android.content.Context
-import android.net.Uri
+import android.os.Build
+import android.os.SystemClock
 import androidx.documentfile.provider.DocumentFile
-import androidx.work.Worker
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
-import com.anggrayudi.storage.file.isMediaDocument
-import com.anggrayudi.storage.file.openOutputStream
 import com.example.cmd.R
-import com.example.cmd.data.db.MyFileDbModel
-import com.example.cmd.helpers.DirectoryFileHelper
-import com.example.cmd.model.MySortedList
-import com.example.cmd.model.PreferencesModel
+import com.example.cmd.domain.entities.FileType
+import com.example.cmd.domain.entities.MyFileDomain
+import com.example.cmd.domain.usecases.autodeletion.data.GetAutoDeletionDataUseCase
+import com.example.cmd.domain.usecases.autodeletion.status.CompleteDeletionUseCase
+import com.example.cmd.domain.usecases.autodeletion.status.DoNotStartDeletionUseCase
+import com.example.cmd.domain.usecases.autodeletion.status.GetDeletionStatusUseCase
+import com.example.cmd.domain.usecases.database.DeleteMyFileUseCase
+import com.example.cmd.domain.usecases.database.GetFilesDbUseCase
+import com.example.cmd.domain.usecases.logs.WriteToLogsEncryptedUseCase
+import com.example.cmd.domain.usecases.logs.WriteToLogsUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
-import java.io.File
-import java.util.Random
 
 //основная часть программы. Стирание данных по алгоритму HMG IS5.
-class AutoShredder(context: Context, workerParams: WorkerParameters) :
-  Worker(context, workerParams) {
-  private lateinit var files: List<MyFileDbModel>
-  private var rd = Random()
-  private val model by lazy { PreferencesModel(context) }
-  private val directoryFileHelper by lazy { DirectoryFileHelper(context) }
-  private val data by lazy {
-    MySortedList(context)
-  }
-  private var version = 0L
+@HiltWorker
+class AutoShredder @AssistedInject constructor(
+  @Assisted private val context: Context,
+  @Assisted workerParams: WorkerParameters,
+  private val getAutoDeletionDataUseCase: GetAutoDeletionDataUseCase,
+  private val writeToLogsUseCase: WriteToLogsUseCase,
+  private val getFilesDbUseCase: GetFilesDbUseCase,
+  private val getDeletionStatusUseCase: GetDeletionStatusUseCase,
+  private val writeToLogsEncryptedUseCase: WriteToLogsEncryptedUseCase,
+  private val deleteMyFileUseCase: DeleteMyFileUseCase,
+  private val startDeletionUseCase: DoNotStartDeletionUseCase,
+  private val doNotStartDeletionUseCase: DoNotStartDeletionUseCase,
+  private val completeDeletionUseCase: CompleteDeletionUseCase
+) :
+  CoroutineWorker(context, workerParams) {
+  private var version = 0
+  private var filesList = listOf<MyFileDomain>()
 
-  //массивы для перезаписи данных
-  private val bigZeroArray by lazy { ByteArray(10485760) { 0 } }
-  private val bigOneArray by lazy { ByteArray(10485760) { 1 } }
-  private val bigRandArray by lazy {
-    ByteArray(10485760) {
-      rd.nextInt(Byte.MAX_VALUE.toInt()).toByte()
+  override suspend fun doWork(): Result {
+    doNotStartDeletionUseCase()
+    val autoDeletionData = getAutoDeletionDataUseCase().first()
+    if (!autoDeletionData.isActive) { //запущено ли автоудаление?
+      return Result.success()
     }
-  }
-
-  private var day = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
-
-  override fun doWork(): Result {
-    GlobalScope.launch(IO) {
-      model.clearLogs()
-    }
-    runBlocking(IO) {
-      File("${model.getFilesDir()}/Log/$day").createNewFile()
-      model.writeLog(false, R.string.deletion_launched)
-      val start = model.getBoolean("started") //запущено ли автоудаление?
-      if (!start) {
-        model.writeLog(false, R.string.deletion_declined)
-        return@runBlocking
+    coroutineScope {
+      val job1 = launch {
+        writeToLogsUseCase(context.getString(R.string.deletion_launched))
       }
-      val job1 = launch(IO) {
-        model.putBoolean("isStarted", false) //получение данных, удаление файлов не началось
-        files = data.getList(model.getPassword("ironKey"))
+      val job2 = launch {
+        val timeOut = autoDeletionData.timeOut.toLong()
+        writeToLogsUseCase(context.getString(R.string.deletion_confirmed, timeOut))
+        delay(timeOut)
       }
-      val job2 = launch(IO) {
-        val timeout = model.getString("timeOut") //тайм-аут до удаления файлов
-        model.writeLog(false, R.string.deletion_confirmed, timeout)
-        delay(timeout.toLong() * 1000)
+      val job3 = launch {
+        version = Build.VERSION.SDK_INT //?
       }
-      val job3 = launch(IO) {
-        version = model.getLong("version")
+      val job4 = launch {
+        filesList = getFilesDbUseCase().first()
       }
-      joinAll(job1, job2, job3)
-      //удаление файлов, удаление файлов началось
-      model.putBoolean("isStarted", true)
-      model.writeLog(false, R.string.deletion_started)
+      joinAll(job1, job2, job3, job4)
+      writeToLogsUseCase(context.getString(R.string.deletion_started))
       removeAll()
     }
-    model.putBoolean("isStarted", false)
-    model.writeLog(false, R.string.deletion_complete)
     return Result.success()
+  }
+
+  private fun MyFileDomain.toDocumentFile(): DocumentFile? {
+    return if (fileType == FileType.DIRECTORY) {
+      DocumentFile.fromTreeUri(context, uri)
+    } else {
+      DocumentFile.fromSingleUri(context, uri)
+    }
+  }
+
+  private suspend fun writeAboutDeletionError(isDirectory: Boolean, name: String, error: String) {
+    val id1 = if (isDirectory) {
+      R.string.folder_deletion_error
+    } else {
+      R.string.file_deletion_error
+    }
+    writeToLogsEncryptedUseCase(
+      context.getString(
+        id1,
+        name, error
+      )
+    )
+  }
+
+  private suspend fun processDeletionResults(
+    result: Pair<Int, Int>,
+    isDirectory: Boolean,
+    file: MyFileDomain
+  ) {
+    if (isDirectory) {
+      if (result.second == 0) {
+        deleteMyFileUseCase(file.uri)
+        writeToLogsEncryptedUseCase(
+          context.getString(
+            R.string.folder_deletion_success,
+            file.path,
+            100
+          )
+        )
+        return
+      }
+      val percent = result.first / result.second
+      if (percent > 0.5) {
+        deleteMyFileUseCase(file.uri)
+        writeToLogsEncryptedUseCase(
+          context.getString(
+            R.string.folder_deletion_success,
+            file.path,
+            percent * 100
+          )
+        )
+        return
+      }
+      writeToLogsEncryptedUseCase(
+        context.getString(
+          R.string.folder_deletion_failed,
+          file.path,
+          percent * 100
+        )
+      )
+      return
+    }
+    if (result.first == 1) {
+      deleteMyFileUseCase(file.uri)
+      writeToLogsEncryptedUseCase(
+        context.getString(
+          R.string.deletion_success,
+          file.path
+        )
+      )
+      return
+    }
+    writeToLogsEncryptedUseCase(
+      context.getString(
+        R.string.deletion_failed,
+        file.path
+      )
+    )
+  }
+
+  private suspend fun removeFile(coroutineScope: CoroutineScope, file: MyFileDomain): Job {
+    return coroutineScope.launch(IO) {
+      val name = file.path
+      val isDirectory = file.fileType == FileType.DIRECTORY
+      val id = if (isDirectory) {
+        R.string.deletion_folder
+      } else {
+        R.string.deletion_file
+      }
+      writeToLogsEncryptedUseCase(
+        context.getString(id, name)
+      )
+      val df = try {
+        file.toDocumentFile() ?: throw RuntimeException()
+      } catch (e: Exception) {
+        writeAboutDeletionError(isDirectory, name, context.getString(R.string.access_error))
+        return@launch
+      }
+      val result: Pair<Int, Int> = deleteFile(df, file.path, isDirectory)
+      processDeletionResults(result, isDirectory, file)
+    }
   }
 
 
   private suspend fun removeAll() {
-    //Файлы сортируются по приоритетам, файлы с одинаковыми приоритетами удаляются параллельно
-    files.sortedByDescending { it.priority }.groupBy { it.priority }.forEach { it1 ->
-      val stop =
-        model.getLong("stop") //получение времени сигнала о прекращении удаления. Если он был отправлен до ближайшей загрузки устройства, то удаление отменяется.
-      if (stop > System.currentTimeMillis() - android.os.SystemClock.elapsedRealtime()) {
-        model.writeLog(false, R.string.deletion_declined)
-        return
+    coroutineScope {
+      getDeletionStatusUseCase().collect {
+        if (it.deletionPreventionTimestamp > System.currentTimeMillis() - SystemClock.elapsedRealtime())
+          writeToLogsUseCase(context.getString(R.string.deletion_declined))
+        throw CancellationException()
       }
-      val jobs: List<Job> = it1.value.map {
-        GlobalScope.launch(IO) {
-          val path = Uri.parse(it.path)
-          val name = it.name
-          val isDirectory = directoryFileHelper.isDirectory(path)
-          val id = if (isDirectory) {
-            R.string.deletion_folder
-          } else {
-            R.string.deletion_file
-          }
-          model.writeLog(
-            true,
-            id,
-            name
-          )
-          val df = try {
-            directoryFileHelper.toDocumentFile(path, isDirectory)
-          } catch (e: Exception) {
-            val id1 = if (isDirectory) {
-              R.string.folder_deletion_error
-            } else {
-              R.string.file_deletion_error
-            }
-            model.writeLog(
-              true,
-              id1,
-              name,
-              applicationContext.getString(R.string.access_error)
-            )
-            return@launch
-          }
-          val result: Pair<Int, Int> = if (!df.isMediaDocument || version > 32) {
-            HMGIS5(df)
-          } else if (version < 30) {
-            HMGIS5FILE(File(it.name))
-          } else {
-            model.writeLog(true, R.string.problematic_file, name)
-            return@launch
-          }
-          //вычисление результативности удаления директории. Если удалено больше половины файлов в папке, удаление считается успешным.
-          if (isDirectory) {
-            if (result.second == 0) {
-              data.delete(it)
-              model.writeLog(true, R.string.folder_deletion_success, name, 100)
-              return@launch
-            }
-            val percent = result.first / result.second
-            if (percent > 0.5) {
-              data.delete(it)
-              model.writeLog(true, R.string.folder_deletion_success, name, percent * 100)
-              return@launch
-            }
-            model.writeLog(true, R.string.folder_deletion_failed, name, percent * 100)
-            return@launch
-          }
-          if (result.first == 1) {
-            data.delete(it)
-            model.writeLog(
-              true,
-              R.string.deletion_success,
-              name
-            )
-            return@launch
-          }
-          model.writeLog(
-            true,
-            R.string.deletion_failed,
-            name
-          )
+      startDeletionUseCase()
+      //Файлы сортируются по приоритетам, файлы с одинаковыми приоритетами удаляются параллельно
+      filesList.sortedByDescending { it.priority }.groupBy { it.priority }.forEach { it1 ->
+        val jobs: List<Job> = it1.value.map {
+          removeFile(this, it)
         }
+        jobs.joinAll()
       }
-      jobs.joinAll()
-    }
-    model.putCurrentTime("isDeleted") //удаление завершено
-  }
-
-  //запись случайных байтов в файл
-  private fun random(df: DocumentFile) {
-    val length = df.length()
-    val len = length.floorDiv(10485760)
-    val end = length % 10485760
-    df.openOutputStream(applicationContext, false)!!.buffered(2048).use {
-      for (i in 0 until len.toInt()) {
-        bigRandArray.shuffle()
-        it.write(bigRandArray)
-      }
-      it.write(ByteArray(end.toInt()) { rd.nextInt(Byte.MAX_VALUE.toInt()).toByte() })
+      completeDeletionUseCase()
     }
   }
 
-  //заполнение файла определённым байтом
-  private fun characterFill(df: DocumentFile, char: Byte) {
-    val length = df.length()
-    val array = if (char.toInt() == 0) {
-      bigZeroArray
-    } else
-      bigOneArray
-    val len = length.floorDiv(10485760)
-    val end = length % 10485760
-    val endArray = ByteArray(end.toInt()) { char }
-    df.openOutputStream(applicationContext, false)!!.buffered(2048).use {
-      for (i in 0 until len.toInt()) {
-        it.write(array)
-      }
-      it.write(endArray)
-    }
-  }
 
   //HMGIS5 для файлов на SD-карте. На выходе общее число файлов и число удалённых файлов.
-  private suspend fun HMGIS5(df: DocumentFile): Pair<Int, Int> {
-    if (df.isDirectory) {
+  private suspend fun deleteFile(
+    df: DocumentFile,
+    path: String,
+    isDirectory: Boolean
+  ): Pair<Int, Int> {
+    if (isDirectory) {
       val resultFiles = mutableListOf<Pair<Int, Int>>()
       val resultDirs = mutableListOf<Deferred<Pair<Int, Int>>>()
       df.listFiles().forEach {
         if (it.isDirectory) {
-          resultDirs += GlobalScope.async(IO) { HMGIS5(it) }
+          resultDirs += coroutineScope { async(IO) { deleteFile(it, it.name ?: "Unknown", true) } }
         } else {
-          resultFiles += HMGIS5(it)
+          resultFiles += deleteFile(it, it.name ?: "Unknown", false)
         }
       }
       val result = resultFiles + resultDirs.awaitAll()
@@ -223,10 +226,7 @@ class AutoShredder(context: Context, workerParams: WorkerParameters) :
         try {
           df.delete()
         } catch (e: Exception) {
-          model.writeLog(
-            true,
-            R.string.folder_deletion_error,
-            df.name ?: "Unknown",
+          writeAboutDeletionError(true,path,
             e.localizedMessage ?: "Unknown"
           )
         }
@@ -234,96 +234,22 @@ class AutoShredder(context: Context, workerParams: WorkerParameters) :
       return Pair(success, all)
     }
     try {
-      characterFill(df, 0)
-      characterFill(df, 1)
-      random(df)
       df.delete()
     } catch (e: Exception) {
-      model.writeLog(
-        true,
-        R.string.file_deletion_error,
-        df.name ?: "Unknown",
-        e.message ?: "Unknown"
+      writeAboutDeletionError(false,path,
+        e.localizedMessage ?: "Unknown"
       )
       return Pair(0, 1)
     }
     return Pair(1, 1)
   }
 
-  //запись случайных байтов в файл
-  private fun randomFile(file: File) {
-    val length = file.length()
-    val len = length.floorDiv(10485760)
-    val end = length % 10485760
-    file.outputStream().buffered(2048).use {
-      for (i in 0 until len.toInt()) {
-        bigRandArray.shuffle()
-        it.write(bigRandArray)
-      }
-      it.write(ByteArray(end.toInt()) { rd.nextInt(Byte.MAX_VALUE.toInt()).toByte() })
-    }
-  }
+  companion object {
+    const val WORK_NAME = "auto_shredder"
 
-  //заполнение файла определённым байтом
-  private fun characterFillFile(file: File, char: Byte) {
-    val length = file.length()
-    val array = if (char.toInt() == 0) {
-      bigZeroArray
-    } else
-      bigOneArray
-    val len = length.floorDiv(10485760)
-    val end = length % 10485760
-    val endArray = ByteArray(end.toInt()) { char }
-    file.outputStream().buffered(2048).use {
-      for (i in 0 until len.toInt()) {
-        it.write(array)
-      }
-      it.write(endArray)
-    }
-  }
+    fun getInstance() =
+      OneTimeWorkRequestBuilder<AutoShredder>().build()
 
-  //HMGIS5 для файлов. Приходится использовать, если работа с URI невозможна.
-  private suspend fun HMGIS5FILE(file: File): Pair<Int, Int> {
-    if (file.isDirectory) {
-      val resultFiles = mutableListOf<Pair<Int, Int>>()
-      val resultDirs = mutableListOf<Deferred<Pair<Int, Int>>>()
-      file.listFiles()?.forEach {
-        if (it.isDirectory) {
-          resultDirs += GlobalScope.async(IO) { HMGIS5FILE(it) }
-        } else {
-          resultFiles += HMGIS5FILE(it)
-        }
-      }
-      val result = resultFiles + resultDirs.awaitAll()
-      var (success, all) = listOf(0, 0)
-      result.forEach { success += it.first; all += it.second }
-      try {
-        file.delete()
-      } catch (e: Exception) {
-        model.writeLog(
-          true,
-          R.string.folder_deletion_error,
-          file.path,
-          e.message ?: "Unknown"
-        )
-      }
-      return Pair(success, all)
-    }
-    try {
-      characterFillFile(file, 0)
-      characterFillFile(file, 1)
-      randomFile(file)
-      file.delete()
-    } catch (e: Exception) {
-      model.writeLog(
-        true,
-        R.string.file_deletion_error,
-        file.path,
-        e.message ?: "Unknown"
-      )
-      return Pair(0, 1)
-    }
-    return Pair(1, 1)
   }
 
 

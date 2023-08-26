@@ -3,13 +3,15 @@ package com.example.cmd.data.db
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.cmd.domain.entities.FileType
 
 @Entity
 //data class для базы данных Room, хранит сведения о файлах, которые должны удаляться
 data class MyFileDbModel(
-    @ColumnInfo val size: Long,
-    @PrimaryKey val path: String,
-    @ColumnInfo val priority: Int,
-    @ColumnInfo val name: String
-) {
-}
+  @PrimaryKey val uri: String,
+  @ColumnInfo val size: Long,
+  @ColumnInfo val sizeFormated: String,
+  @ColumnInfo val path: String,
+  @ColumnInfo val priority: Int,
+  @ColumnInfo val fileType: FileType,
+)

@@ -11,7 +11,7 @@ import com.anggrayudi.storage.extension.isTreeDocumentFile
 import com.example.cmd.data.db.MyFileDbModel
 import com.example.cmd.data.db.MyFileDao
 import com.example.cmd.data.db.FileDataBase
-import com.example.cmd.presentation.adapter.DataAdapter
+import com.example.cmd.presentation.adapter.MyFileAdapter
 import net.sqlcipher.database.SupportFactory
 
 //DataCallback для вычисления изменений в списках
@@ -46,7 +46,7 @@ class DataCallback(
 
 //Класс для хранения данных о файлах, которые должны быть удалены
 class MySortedList(private val applicationContext: Context) {
-  lateinit var adapter: DataAdapter
+  lateinit var adapter: MyFileAdapter
   lateinit var data: SortedList<MyFileDbModel> //основной, обновляемый список файлов
   private var initialized = false
   lateinit var priorityType: Priority
@@ -136,9 +136,9 @@ class MySortedList(private val applicationContext: Context) {
         override fun compare(o1: MyFileDbModel, o2: MyFileDbModel): Int =
           when (priority) {
             Priority.PATH_DESCENDING ->
-              o2.name.lowercase().compareTo(o1.name.lowercase())
+              o2.uri.lowercase().compareTo(o1.uri.lowercase())
             Priority.PATH_ASCENDING ->
-              -o2.name.lowercase().compareTo(o1.name.lowercase())
+              -o2.uri.lowercase().compareTo(o1.uri.lowercase())
             Priority.PRIORITY_DESCENDING ->
               o2.priority - o1.priority
             Priority.PRIORITY_ASCENDING ->

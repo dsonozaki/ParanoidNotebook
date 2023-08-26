@@ -75,7 +75,7 @@
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/sort1"
       app:layout_constraintVertical_bias="1.0"
-      tools:listitem="@layout/list_row" />
+      tools:listitem="@layout/file_row" />
 
     <androidx.constraintlayout.widget.Guideline
       android:id="@+id/guideline23"

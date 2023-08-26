@@ -7,7 +7,7 @@ import com.example.cmd.domain.entities.Passwords
 import com.example.cmd.domain.repositories.PasswordsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -33,8 +33,8 @@ class PasswordsRepositoryImpl @Inject constructor(@ApplicationContext private va
     }
   }
 
-  override val passwords: Flow<Passwords> =
-    context.passwordsDataStore.data
+  override suspend fun getPasswords(): Passwords =
+    context.passwordsDataStore.data.first()
 
   companion object {
     private const val DATASTORE_NAME = "passwords_datastore.json"

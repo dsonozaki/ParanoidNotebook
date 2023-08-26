@@ -14,6 +14,7 @@ object LogsDataSerializer: Serializer<LogsData> {
   override val defaultValue: LogsData
     get() = LogsData()
 
+
   override suspend fun readFrom(input: InputStream): LogsData {
     return try {
       Json.decodeFromString(deserializer = LogsData.serializer(),

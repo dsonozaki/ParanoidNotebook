@@ -1,5 +1,6 @@
 package com.example.cmd.data.serializers
 
+import android.os.Build
 import androidx.datastore.core.Serializer
 import com.example.cmd.domain.entities.AutoDeletionData
 import kotlinx.coroutines.Dispatchers
@@ -10,8 +11,10 @@ import java.io.InputStream
 import java.io.OutputStream
 
 object AutoDeletionDataSerializer: Serializer<AutoDeletionData> {
+
+  private val xiaomiManufacturer = "xiaomi"
   override val defaultValue: AutoDeletionData
-    get() = AutoDeletionData()
+    get() = AutoDeletionData(xiaomiPhoneNotificationRequired = Build.MANUFACTURER.lowercase() == xiaomiManufacturer)
 
   override suspend fun readFrom(input: InputStream): AutoDeletionData {
     return try {

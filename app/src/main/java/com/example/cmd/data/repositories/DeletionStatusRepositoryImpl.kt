@@ -39,7 +39,7 @@ class DeletionStatusRepositoryImpl @Inject constructor(@ApplicationContext priva
   override suspend fun completeDeletion() {
     withContext(IO) {
       context.deletionStatusDataStore.updateData {
-        it.copy(deletionState = DeletionState.NOT_STARTED)
+        it.copy(deletionState = DeletionState.COMPLETE)
       }
     }
   }

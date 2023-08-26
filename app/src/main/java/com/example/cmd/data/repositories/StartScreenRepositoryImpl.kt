@@ -8,7 +8,7 @@ import com.example.cmd.domain.entities.StartScreenData
 import com.example.cmd.domain.repositories.StartScreenRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -18,8 +18,8 @@ class StartScreenRepositoryImpl @Inject constructor(
 
   private val Context.startScreenDataStore by dataStore(DATASTORE_NAME, StartScreenDataSerializer)
 
-  override val startScreenData: Flow<StartScreenData> =
-    context.startScreenDataStore.data
+  override suspend fun getStartScreenData(): StartScreenData =
+    context.startScreenDataStore.data.first()
 
 
   override suspend fun saveText(text: String) {

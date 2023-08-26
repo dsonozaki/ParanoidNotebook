@@ -7,27 +7,39 @@ import com.example.cmd.di.MainScreenNotificationChannel
 import com.example.cmd.domain.entities.AppInitStatus
 import com.example.cmd.domain.entities.ContainPasswords
 import com.example.cmd.domain.entities.DeletionState
+import com.example.cmd.domain.entities.DeletionStatus
 import com.example.cmd.domain.entities.Passwords
-import com.example.cmd.domain.repositories.DeletionStatusRepository
-import com.example.cmd.domain.repositories.StartScreenRepository
-import com.example.cmd.presentation.UIText
+import com.example.cmd.domain.usecases.autodeletion.status.GetDeletionStatusUseCase
+import com.example.cmd.domain.usecases.autodeletion.status.PreventDeletionUseCase
+import com.example.cmd.domain.usecases.logs.WriteToLogsUseCase
+import com.example.cmd.domain.usecases.startScreen.FinishInitializationUseCase
+import com.example.cmd.domain.usecases.startScreen.GetDataUseCase
+import com.example.cmd.domain.usecases.startScreen.SaveTextUseCase
+import com.example.cmd.domain.usecases.startScreen.ShowHintUseCase
 import com.example.cmd.presentation.states.StartScreenState
+import com.example.cmd.presentation.utils.UIText
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 //viewmodel основного экрана
 @HiltViewModel
 class MainVM @AssistedInject constructor(
-  private val startScreenRepository: StartScreenRepository,
-  private val deletionStatusRepository: DeletionStatusRepository,
   private val _currentState: MutableStateFlow<StartScreenState>,
+  getDataUseCase: GetDataUseCase,
+  showHintUseCase: ShowHintUseCase,
+  getDeletionStatusUseCase: GetDeletionStatusUseCase,
+  private val preventDeletionUseCase: PreventDeletionUseCase,
+  private val finishInitializationUseCase: FinishInitializationUseCase,
+  private val saveTexUseCase: SaveTextUseCase,
+  private val writeToLogsUseCase: WriteToLogsUseCase,
   @MainScreenNotificationChannel private val toastChannel: Channel<UIText>,
   @Assisted private val passwords: Passwords
 ) : ViewModel() {
@@ -36,21 +48,27 @@ class MainVM @AssistedInject constructor(
 
   val toastFlow = toastChannel.receiveAsFlow()
 
+  private val deletionStatus = getDeletionStatusUseCase().stateIn(
+    viewModelScope,
+    SharingStarted.Lazily,
+    DeletionStatus()
+  )
+
   init {
     viewModelScope.launch {
-      _currentState.value = startScreenRepository.startScreenData.first().let {
+      _currentState.value = getDataUseCase().let {
         when (it.appInitStatus) {
           AppInitStatus.INITIALISING -> {
             if (passwords.isEmpty()) {
               StartScreenState.Initialize
             } else {
-              startScreenRepository.showHint()
-              StartScreenState.ShowHint()
+              showHintUseCase()
+              StartScreenState.ShowHint
             }
           }
 
           AppInitStatus.SHOW_HINT -> {
-            StartScreenState.ShowHint()
+            StartScreenState.ShowHint
           }
 
           AppInitStatus.INITIALISED -> {
@@ -66,7 +84,7 @@ class MainVM @AssistedInject constructor(
       when (passwords.containsString(text)) {
         ContainPasswords.CONTAINS_SETTINGS -> {
           if (currentState.value is StartScreenState.ShowHintEditing) {
-            startScreenRepository.finishInitialisation()
+            finishInitializationUseCase()
           }
           _currentState.value = StartScreenState.SecretModeEditing(UIText.UsualString(text))
         }
@@ -76,12 +94,12 @@ class MainVM @AssistedInject constructor(
 
         ContainPasswords.CONTAINS_MAIN -> {
           val deletionResultString =
-            when (deletionStatusRepository.deletionStatus.first().deletionState) {
+            when (deletionStatus.value.deletionState) {
               DeletionState.COMPLETE -> R.string.too_late
               DeletionState.NOT_STARTED -> R.string.full_saved
               DeletionState.STARTED -> R.string.part_saved
             }
-          deletionStatusRepository.preventDeletion()
+          preventDeletionUseCase()
           toastChannel.send(UIText.StringResource(deletionResultString))
           _currentState.value = StartScreenState.NormalModeEditing(UIText.UsualString(text))
         }
@@ -109,18 +127,24 @@ class MainVM @AssistedInject constructor(
     viewModelScope.launch {
       currentState.value.let {
         when (it) {
-          is StartScreenState.ShowHintEditing -> StartScreenState.ShowHint()
+          is StartScreenState.ShowHintEditing -> StartScreenState.ShowHint
           is StartScreenState.NormalModeEditing -> {
             _currentState.value = StartScreenState.NormalMode(it.text)
-            startScreenRepository.saveText(it.text.value.replace(passwords.mainPass,""))
+            saveTexUseCase(it.text.value.replace(passwords.mainPass,""))
           }
           is StartScreenState.SecretModeEditing -> {
             _currentState.value = StartScreenState.SecretMode(it.text)
-            startScreenRepository.saveText(it.text.value.replace(passwords.settingsPass,""))
+            saveTexUseCase(it.text.value.replace(passwords.settingsPass,""))
           }
           else -> throw RuntimeException("Strange StartScreenState, saveText: ${it.javaClass.name}")
         }
       }
+    }
+  }
+
+  fun writeLogs(string: String) {
+    viewModelScope.launch {
+      writeToLogsUseCase(string)
     }
   }
 

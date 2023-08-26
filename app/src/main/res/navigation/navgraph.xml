@@ -29,7 +29,7 @@
     android:id="@+id/deletionSettingsFragment"
     android:name="com.example.cmd.presentation.fragments.DeletionSettingsFragment"
     android:label="DeletionSettingsFragment"
-    tools:layout="@layout/deletion_settings"/>
+    tools:layout="@layout/deletion_settings_fragment"/>
   <fragment
     android:id="@+id/logsFragment"
     android:name="com.example.cmd.presentation.fragments.LogsFragment"
@@ -59,7 +59,7 @@
       android:id="@+id/editPasswordsFragment"
       android:name="com.example.cmd.presentation.fragments.EditPasswordsFragment"
       android:label="EditPasswordsFragment"
-      tools:layout="@layout/edit_passwords">
+      tools:layout="@layout/edit_passwords_fragment">
       <action
         android:id="@+id/passwordsInitialized"
         app:destination="@id/mainFragment" />

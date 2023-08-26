@@ -1,124 +1,95 @@
 package com.example.cmd.presentation.viewmodels
 
-import android.text.Spanned
-import android.view.View
-import androidx.core.text.HtmlCompat
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.CreationExtras.Empty.map
-import com.example.cmd.domain.entities.LogEntity
+import com.example.cmd.R
 import com.example.cmd.domain.entities.LogState
 import com.example.cmd.domain.entities.LogsData
-import com.example.cmd.domain.repositories.LogsDataRepository
-import com.example.cmd.domain.repositories.LogsRepository
-import com.example.cmd.model.PreferencesModel
+import com.example.cmd.domain.usecases.logs.ChangeAutoDeletionTimeOutUseCase
+import com.example.cmd.domain.usecases.logs.ClearLogsForDayUseCase
+import com.example.cmd.domain.usecases.logs.GetLogsDataUseCase
+import com.example.cmd.domain.usecases.logs.GetLogsUseCase
+import com.example.cmd.domain.usecases.logs.LookLogsForDayUseCase
 import com.example.cmd.presentation.states.LogsScreenState
+import com.example.cmd.presentation.utils.UIText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combineTransform
-import kotlinx.coroutines.flow.internal.NopCollector.emit
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
-import java.io.File
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class LogsVM @Inject constructor(
-  val logsRepository: LogsRepository,
-  val logsDataRepository: LogsDataRepository,
+  getLogsUseCase: GetLogsUseCase,
+  getLogsDataUseCase: GetLogsDataUseCase,
+  private val changeAutoDeletionTimeOutUseCase: ChangeAutoDeletionTimeOutUseCase,
+  private val clearLogsForDayUseCase: ClearLogsForDayUseCase,
+  private val lookLogsForDayUseCase: LookLogsForDayUseCase,
   private val updateStatesFlow: MutableStateFlow<LogsScreenState>
 ) :
   ViewModel() {
 
-  private fun <T> Flow<T>.mergeWith(another: Flow<T>): Flow<T> {
-    return merge(this, another)
-  }
+  private var logsText = ""
 
-  val logsState =
-    logsRepository.logEntity.combineTransform(updateStatesFlow) { logEntity: LogEntity, logScreenState: LogsScreenState ->
-      val newState: LogsScreenState = when (logEntity.logState) {
-        LogState.NEW_LOG_FILE ->
-          when (logScreenState) {
-            is LogsScreenState.Loading -> LogsScreenState.ViewLogs(date = logEntity.today, logs = logEntity.logs)
-            is StatesWithLogsDate
-          }
+  val logsState: StateFlow<LogsScreenState> =
+    getLogsUseCase().map {
+      if (it.logState == LogState.NEW_LOG_STRING) {
+        logsText += it.logs.colorizeLogsString()
+        return@map LogsScreenState.ViewLogs(it.today, UIText.ColoredHTMLText(logsText, R.color.amtheme, R.color.whitetext))
       }
-      emit(newState)
-    }.stateIn(
+      logsText = buildString {
+        it.logs.lines().forEach {
+          append(it.colorizeLogsString())
+        }
+      }
+      LogsScreenState.ViewLogs(it.today, UIText.ColoredHTMLText(logsText, R.color.amtheme, R.color.whitetext))
+    }.mergeWith(updateStatesFlow).stateIn(
       scope = viewModelScope,
-      started = SharingStarted.Lazily,
-      initialValue = LogsScreenState.Loading
+      started = SharingStarted.Lazily, //?
+      initialValue = LogsScreenState.Loading()
     )
 
-  private fun addStringToText(string: String) {
+  val logsData: StateFlow<LogsData> = getLogsDataUseCase().stateIn(scope = viewModelScope,
+    started = SharingStarted.Lazily,
+    initialValue = LogsData())
 
+  private fun <T> Flow<T>.mergeWith(flow: Flow<T>): Flow<T> {
+    return merge(this, flow)
   }
 
-  init {
-    loadLogs()
-
+  private fun String.colorizeLogsString(): String {
+    val groups =
+      Regex("(\\d\\d:\\d\\d:\\d\\d) (.*)").find(
+        this
+      )?.groupValues ?: return "Wrong string, can't colorize"
+    val time = groups[1]
+    val message = groups[2]
+    return "<span style=\"color: %s;\">$time</span><span style=\"color: %s;\">$message</span><br>"
   }
 
-  fun getTimeLag() = model.getLong("logs_autoremove")
-
-  fun loadLogs() {
-    visibility.value = View.VISIBLE
-    var result = ""
-    //открытие сегодняшних логов
-    File("${model.getFilesDir()}/Log/$day").bufferedReader().use {
-      var time = ""
-      var message = ""
-      it.forEachLine {
-        val groups =
-          Regex("(\\d\\d:\\d\\d:\\d\\d) (.*)").find(
-            it
-          )?.groupValues
-        if (groups != null) {
-          time = groups[1]
-          message = groups[2]
-        } else
-          message += it
-        //дешифровка и окраска логов
-        if (message.endsWith(" C")) {
-          message = try {
-            "<span style=\"color: #ff0000;\">" + model.decodeString(
-              message.removeSuffix(" C")
-            ) + "</span>"
-          } catch (e: Exception) {
-            "<span style=\"color: #ff0000;\">Не удалось расшифровать строку</span>"
-          }
-          result += "<span style=\"color: #ffcc00;\">$time</span> $message<br>"
-        }
-        if (message.endsWith(" E")) {
-          message = message.removeSuffix(" E")
-          result += "<span style=\"color: #ffcc00;\">$time</span> $message<br>"
-        }
-      }
+  fun changeAutoDeletionTimeout(timeout: Int) {
+    viewModelScope.launch {
+      changeAutoDeletionTimeOutUseCase(timeout)
     }
-    text.value = HtmlCompat.fromHtml(result, HtmlCompat.FROM_HTML_MODE_LEGACY)
-    visibility.value = View.GONE
-    scroll.value = true
   }
 
-  fun clearLogs() {
-    File("${model.getFilesDir()}/Log/$day").bufferedWriter().use { it.write("") }
+
+  fun clearLogsForDay(day: String) {
+    viewModelScope.launch {
+      clearLogsForDayUseCase(day)
+    }
   }
 
-  fun logTimeout(days: Long) {
-    model.putLong("logs_autoremove", days)
+  fun openLogsForDay(day: String) {
+    viewModelScope.launch {
+      updateStatesFlow.emit(LogsScreenState.Loading())
+      lookLogsForDayUseCase(day)
+    }
   }
-
-  //получение всех файлов с логами
-  fun getAllowed() =
-    File("${model.getFilesDir()}/Log").listFiles()?.map { it.name }?.toSet() ?: setOf()
-
 
 }

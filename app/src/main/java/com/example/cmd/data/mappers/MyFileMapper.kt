@@ -1,23 +1,22 @@
 package com.example.cmd.data.mappers
 
+import android.net.Uri
 import com.example.cmd.data.db.MyFileDbModel
 import com.example.cmd.domain.entities.MyFileDomain
 import javax.inject.Inject
 
 class MyFileMapper @Inject constructor() {
-  fun mapDbToDtModel(myFileDbModel: MyFileDbModel) =
+  private fun mapDbToDtModel(myFileDbModel: MyFileDbModel) =
     MyFileDomain(
       size = myFileDbModel.size,
       path = myFileDbModel.path,
       priority = myFileDbModel.priority,
-      name = myFileDbModel.name
+      uri = Uri.parse(myFileDbModel.uri),
+      fileType = myFileDbModel.fileType,
+      sizeFormated = myFileDbModel.sizeFormated
     )
 
-  fun mapDtToDbModel(myFileDomain: MyFileDomain) =
-    MyFileDbModel(
-      size = myFileDomain.size,
-      path = myFileDomain.path,
-      priority = myFileDomain.priority,
-      name = myFileDomain.name
-    )
+  fun mapDbListToDtList(dbList: List<MyFileDbModel>): List<MyFileDomain> =
+    dbList.map { mapDbToDtModel(it) }
+
 }

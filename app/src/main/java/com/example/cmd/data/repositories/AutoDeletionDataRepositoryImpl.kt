@@ -7,9 +7,7 @@ import com.example.cmd.domain.entities.AutoDeletionData
 import com.example.cmd.domain.repositories.AutoDeletionDataRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class AutoDeletionDataRepositoryImpl @Inject constructor(
@@ -20,12 +18,8 @@ class AutoDeletionDataRepositoryImpl @Inject constructor(
 
   private val Context.autoDeletionDataStore by dataStore(DATASTORE_NAME, AutoDeletionDataSerializer)
 
-  override val autoDeletionData: SharedFlow<AutoDeletionData> =
-    context.autoDeletionDataStore.data.shareIn(
-      coroutineScope,
-      SharingStarted.Lazily,
-      replay = 1
-    )
+  override val autoDeletionData: Flow<AutoDeletionData> =
+    context.autoDeletionDataStore.data
 
   override suspend fun putAutoDeletionTimeout(timeout: Int) {
     context.autoDeletionDataStore.updateData {
@@ -33,15 +27,15 @@ class AutoDeletionDataRepositoryImpl @Inject constructor(
     }
   }
 
-  override suspend fun startAutoDeletion() {
+  override suspend fun xiomiNotificationSent() {
     context.autoDeletionDataStore.updateData {
-      it.copy(isActive = true)
+      it.copy(xiaomiPhoneNotificationRequired = false)
     }
   }
 
-  override suspend fun stopAutoDeletion() {
+  override suspend fun switchAutoDeletionStatus() {
     context.autoDeletionDataStore.updateData {
-      it.copy(isActive = false)
+      it.copy(isActive = !it.isActive)
     }
   }
 

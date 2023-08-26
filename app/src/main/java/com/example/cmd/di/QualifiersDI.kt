@@ -9,3 +9,7 @@ annotation class LogsDirectory
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 annotation class MainScreenNotificationChannel
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class NewLogFileChannel

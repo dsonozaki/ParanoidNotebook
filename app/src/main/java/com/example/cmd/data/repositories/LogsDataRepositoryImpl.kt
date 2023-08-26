@@ -5,39 +5,27 @@ import androidx.datastore.dataStore
 import com.example.cmd.data.serializers.LogsDataSerializer
 import com.example.cmd.domain.entities.LogsData
 import com.example.cmd.domain.repositories.LogsDataRepository
+import com.example.cmd.getEpochDays
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.collections.immutable.mutate
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.shareIn
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
 import javax.inject.Inject
 
-fun Calendar.formatDate(): String {
-  val myFormat = "dd/MM/yy"
-  val sdf = SimpleDateFormat(myFormat, Locale.ENGLISH)
-  return sdf.format(this.time)
-}
 
 class LogsDataRepositoryImpl @Inject constructor(
   @ApplicationContext private val context: Context,
-  coroutineScope: CoroutineScope
+  coroutineScope: CoroutineScope,
 ) :
   LogsDataRepository {
 
   private val Context.logsDataStore by dataStore(DATASTORE_NAME, LogsDataSerializer)
 
-  override val logsData: SharedFlow<LogsData> = context.logsDataStore.data.shareIn(
-    coroutineScope,
-    SharingStarted.Lazily,
-    replay = 1
-  )
+  override val logsData: Flow<LogsData> = context.logsDataStore.data
 
   override suspend fun clearOldLogsDays(): Set<String> {
-    val currentDay = java.time.LocalDate.now().toEpochDay()
+    val currentDay = LocalDateTime.now().getEpochDays()
     val daysToClear: MutableSet<String> = mutableSetOf()
     context.logsDataStore.updateData {
       if (currentDay - it.lastDayOfAutoDeletion == 0L
@@ -45,10 +33,10 @@ class LogsDataRepositoryImpl @Inject constructor(
         return@updateData it
       val removePeriod = it.logsAutoRemovePeriod
       val logDates = it.logDates.mutate { list ->
-        list.forEach { calendar ->
-          if (checkOldDays(calendar, removePeriod, currentDay)) {
-            list.remove(calendar)
-            daysToClear.add(calendar.formatDate())
+        list.forEach { localDateTime ->
+          if (checkOldDays(localDateTime, removePeriod, currentDay)) {
+            list.remove(localDateTime)
+            daysToClear.add(localDateTime)
           }
         }
       }
@@ -57,15 +45,8 @@ class LogsDataRepositoryImpl @Inject constructor(
     return daysToClear
   }
 
-  private fun checkOldDays(calendar: Calendar, removePeriod: Int, currentDay: Long): Boolean {
-    return calendar.getEpochDay() - currentDay > removePeriod
-  }
-
-  private fun Calendar.getEpochDay(): Long {
-    return java.time.LocalDate.ofYearDay(
-      this.get(Calendar.YEAR),
-      this.get(Calendar.DAY_OF_YEAR)
-    ).toEpochDay()
+  private fun checkOldDays(localDateTime: String, removePeriod: Int, currentDay: Long): Boolean {
+    return currentDay - LocalDateTime.parse(localDateTime).getEpochDays() > removePeriod
   }
 
   override suspend fun editLogsAutoRemoveTimeout(timeout: Int) {
@@ -74,19 +55,19 @@ class LogsDataRepositoryImpl @Inject constructor(
     }
   }
 
-  override suspend fun addTodayToLogs() {
+  override suspend fun addDayToLogs(day: String) {
     context.logsDataStore.updateData {
-      val logDates = it.logDates.mutate { calendar ->
-        calendar.add(Calendar.getInstance())
+      val logDates = it.logDates.mutate { localDateTimes ->
+        localDateTimes.add(day)
       }
       it.copy(logDates = logDates)
     }
   }
 
-  override suspend fun removeDayFromLogs(day: Calendar) {
+  override suspend fun removeDayFromLogs(day: String) {
     context.logsDataStore.updateData {
-      val logDates = it.logDates.mutate { calendar ->
-        calendar.remove(day)
+      val logDates = it.logDates.mutate { localDateTimes ->
+        localDateTimes.remove(day)
       }
       it.copy(logDates = logDates)
     }

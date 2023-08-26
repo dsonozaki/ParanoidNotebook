@@ -1,6 +1,7 @@
 package com.example.cmd.di
 
-import com.example.cmd.presentation.UIText
+import com.example.cmd.presentation.utils.UIText
+import com.example.cmd.presentation.events.LogScreenEvents
 import com.example.cmd.presentation.states.LogsScreenState
 import com.example.cmd.presentation.states.PasswordsState
 import com.example.cmd.presentation.states.StartScreenState
@@ -16,12 +17,12 @@ import javax.inject.Singleton
 class ViewModelsModule {
   @Provides
   @Singleton
-  fun provideStartScreenSharedFlow(): MutableStateFlow<StartScreenState> = MutableStateFlow(StartScreenState.Loading)
+  fun provideStartScreenStateFlow(): MutableStateFlow<StartScreenState> = MutableStateFlow(StartScreenState.Loading)
 
   @Provides
   @MainScreenNotificationChannel
   @Singleton
-  fun provideMainScreenNotificationFlow(): Channel<UIText> = Channel()
+  fun provideMainScreenNotificationChannel(): Channel<UIText> = Channel()
 
   @Provides
   @Singleton
@@ -29,5 +30,9 @@ class ViewModelsModule {
 
   @Provides
   @Singleton
-  fun provideLogsStateFlow(): MutableStateFlow<LogsScreenState> = MutableStateFlow(LogsScreenState.ViewLogs("",""))
+  fun provideLogsStateFlow(): MutableStateFlow<LogsScreenState> = MutableStateFlow(LogsScreenState.Loading())
+
+  @Provides
+  @Singleton
+  fun provideLogScreenEventsChannel() : Channel<LogScreenEvents> = Channel()
 }

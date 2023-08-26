@@ -58,7 +58,7 @@
   <string name="part_saved">Часть данных уже удалена, но некоторые могли сохраниться</string>
   <string name="full_saved">Удаление данных предотвращено</string>
   <string name="autodelete">Автоудаление</string>
-  <string name="size">Размер: %1$d%2$s</string>
+  <string name="size">Размер: %1$s</string>
   <string name="priority">Приоритет: %1$d</string>
   <string name="frequentDeletion">Возникла проблема с удалением файла %1$s. Возможно, Вы удаляете слишком часто, попробуйте ещё раз</string>
   <string name="about_file_title">Сведения о файле</string>
@@ -72,7 +72,7 @@
   <string name="enter">Кто-то вошёл в секретные настройки Paranoid Notebook</string>
   <string name="deletion_launched">Устройство запущено</string>
   <string name="clear_logs">Очистить логи за день</string>
-  <string name="deletion_confirmed">Начало обратного отчёта до удаления файлов. До уничтожения данных осталось %1$s секунд.</string>
+  <string name="deletion_confirmed">Начало обратного отчёта до удаления файлов. До уничтожения данных осталось %1$d секунд.</string>
   <string name="deletion_declined">Удаление файлов отменено</string>
   <string name="deletion_started">Удаление файлов началось</string>
   <string name="deletion_file">Файл %1$s удаляется</string>
@@ -100,4 +100,6 @@
   <string name="trouble_with_mediafiles"><![CDATA[<pre><span>Убедительная просьба - когда перейдёте в менеджер файлов, не добавляйте файлы из вкладок </span><strong>"Недавние"</strong><span>, </span><strong>"Изображения"</strong><span> и т.д. Программа будет работать только с файлами, добавленными через вкладку <strong>"</strong></span><strong>%1$s</strong><span><strong>"</strong> - перейдите прямо к нужному файлу через все папки.</span></pre>]]></string>
   <string name="file_removed">Не удалось добавить файл</string>
   <string name="folder_removed">Не удалось добавить папку</string>
+  <string name="empty_value_in_dialog">Вы ввели пустое значение</string>
+  <string name="incorrect_number_in_dialog">Вы ввели некорректное число</string>
 </resources>

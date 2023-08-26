@@ -6,12 +6,15 @@ import com.example.cmd.data.repositories.DeletionStatusRepositoryImpl
 import com.example.cmd.data.repositories.FilesRepositoryImpl
 import com.example.cmd.data.repositories.LogsDataRepositoryImpl
 import com.example.cmd.data.repositories.LogsRepositoryImpl
+import com.example.cmd.data.repositories.LogsTextRepositoryImpl
+import com.example.cmd.domain.entities.FilesSortOrder
 import com.example.cmd.domain.entities.LogEntity
 import com.example.cmd.domain.repositories.AutoDeletionDataRepository
 import com.example.cmd.domain.repositories.DeletionStatusRepository
 import com.example.cmd.domain.repositories.FilesRepository
 import com.example.cmd.domain.repositories.LogsDataRepository
 import com.example.cmd.domain.repositories.LogsRepository
+import com.example.cmd.domain.repositories.LogsTextRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -20,8 +23,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
-import java.util.Calendar
+import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
@@ -29,7 +33,7 @@ import javax.inject.Singleton
 abstract class  SingletonRepositoriesModule {
   @Binds
   @Singleton
-  abstract fun bindLogsRepository(logsRepositoryImpl: LogsRepositoryImpl): LogsRepository
+  abstract fun bindLogsRepository(logsTextRepositoryImpl: LogsTextRepositoryImpl): LogsTextRepository
 
   @Binds
   @Singleton
@@ -45,24 +49,33 @@ abstract class  SingletonRepositoriesModule {
 
   @Binds
   @Singleton
-  abstract fun bindDeletionStatusRepository(bindDeletionStatusRepositoryImpl: DeletionStatusRepositoryImpl): DeletionStatusRepository
+  abstract fun bindDeletionStatusRepository(deletionStatusRepositoryImpl: DeletionStatusRepositoryImpl): DeletionStatusRepository
 
+  @Binds
+  @Singleton
+  abstract fun bindLogsRepository(logsRepositoryImpl: LogsRepositoryImpl): LogsRepository
   companion object {
     @Provides
     @Singleton
     fun provideCoroutineScope(): CoroutineScope {
-      return CoroutineScope(Dispatchers.Default)
+      return CoroutineScope(Dispatchers.IO)
     }
 
     @Provides
     @LogsDirectory
-    fun getLogsDirQualifier(@ApplicationContext context: Context): String = "${context.filesDir.path}/Log"
-
-    @Provides
-    fun provideTodayCalendar(): Calendar = Calendar.getInstance()
+    fun provideLogsDir(@ApplicationContext context: Context): String = "${context.filesDir.path}/Log"
 
     @Provides
     @Singleton
     fun provideLogEntitySharedFlow(): MutableSharedFlow<LogEntity> = MutableSharedFlow()
+
+    @Provides
+    @NewLogFileChannel
+    @Singleton
+    fun provideLogFileChannel(): Channel<String> = Channel()
+
+    @Provides
+    @Singleton
+    fun provideSortOrderFlow(): MutableStateFlow<FilesSortOrder> = MutableStateFlow(FilesSortOrder.PRIORITY_DESC)
   }
 }
