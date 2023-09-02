@@ -3,6 +3,7 @@ package com.example.cmd.presentation.fragments
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -16,21 +17,28 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.anggrayudi.storage.extension.isMediaDocument
 import com.example.cmd.R
+import com.example.cmd.databinding.DeletionSettingsFragmentBinding
+import com.example.cmd.domain.entities.FilesSortOrder
+import com.example.cmd.presentation.adapter.MyFileAdapter
 import com.example.cmd.presentation.adapter.MyTouchHelper
-import com.example.cmd.databinding.DeletionSettingsBinding
-import com.example.cmd.presentation.factory.DeletionFactory
-import com.example.cmd.helpers.DialogHelper
-import com.example.cmd.helpers.Request
-import com.example.cmd.model.MySortedList
+import com.example.cmd.presentation.dialogs.InfoDialog
+import com.example.cmd.presentation.dialogs.InputDigitDialog
+import com.example.cmd.presentation.dialogs.QuestionDialog
+import com.example.cmd.presentation.states.DeletionActivationStatus
+import com.example.cmd.presentation.states.DeletionSettingsState
 import com.example.cmd.presentation.viewmodels.DeletionSettingsVM
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 
 //Фикс бага Recycler View: https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in
@@ -41,16 +49,20 @@ class LinearLayoutManagerWrapper(context: Context?) : LinearLayoutManager(contex
   }
 }
 
+@AndroidEntryPoint
 class DeletionSettingsFragment : Fragment() {
-  private val dpi by lazy { resources.displayMetrics.density }
-  private val viewModel: DeletionSettingsVM by viewModels {
-    DeletionFactory(requireContext())
-  }
-  private lateinit var deletionSettingsBinding: DeletionSettingsBinding
+
+  @Inject
+  lateinit var myFileAdapter: MyFileAdapter
+
+  private val viewModel: DeletionSettingsVM by viewModels()
+  private var _binding: DeletionSettingsFragmentBinding? = null
+  private val binding
+    get() = _binding ?: throw RuntimeException("DeletionSettingsFragmentBinding == null")
   private val controller by lazy { findNavController() }
-  private val dialogHelper by lazy { DialogHelper(controller) }
-  private var allFabsVisible = false
+  private var allFabsVisible = true //вынести в ViewModel?
   private val contentResolver by lazy { requireContext().contentResolver }
+  private val dpi by lazy { resources.displayMetrics.density }
   private val takeFlags by lazy {
     Intent.FLAG_GRANT_READ_URI_PERMISSION or
       Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -62,34 +74,151 @@ class DeletionSettingsFragment : Fragment() {
     container: ViewGroup?,
     savedInstanceState: Bundle?
   ): View {
-    deletionSettingsBinding =
-      DeletionSettingsBinding.inflate(inflater, container, false)
-    deletionSettingsBinding.items.layoutManager = LinearLayoutManagerWrapper(context)
-    deletionSettingsBinding.lifecycleOwner = this
-    deletionSettingsBinding.viewmodel = viewModel
-    //настройки recyclerview. Получение адаптера из viewmodel.
-    ItemTouchHelper(MyTouchHelper(dpi)).attachToRecyclerView(deletionSettingsBinding.items)
-    //скрытие дополнительных FAB
-    deletionSettingsBinding.addFile.visibility = View.GONE
-    deletionSettingsBinding.addFolder.visibility = View.GONE
-    deletionSettingsBinding.add.shrink()
+    _binding =
+      DeletionSettingsFragmentBinding.inflate(inflater, container, false)
+    binding.lifecycleOwner = viewLifecycleOwner
+    binding.viewmodel = viewModel
+    return binding.root
+  }
 
-    viewModel.loaded.observe(requireActivity()) {
-      deletionSettingsBinding.items.adapter = it
-    }
-    //Слушатели кликов по кнопкам
-    deletionSettingsBinding.sort.setOnClickListener {
-      menu(R.id.sort)
-    }
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    super.onViewCreated(view, savedInstanceState)
+    binding.items.layoutManager = LinearLayoutManagerWrapper(context)
+    //настройки recyclerview.
+    setupRecyclerView()
 
-    deletionSettingsBinding.sort1.setOnClickListener {
-      menu(R.id.sort1)
-    }
+    //Настройка FAB
+    setupFABs()
 
-    deletionSettingsBinding.add.setOnClickListener {
-      addItem()
-    }
+    //Настройка сортировки списка
+    setupSort()
 
+    //Настройка ActionBar
+    setupActionBar()
+
+    //Настроить автообновление списка файлов
+    setupFilesListListener()
+
+    //Обработка результатов диалогов с пользователем
+    setupDialogListeners()
+
+  }
+
+  private fun setupFilesListListener() {
+    lifecycleScope.launch {
+      viewModel.filesState.collect {
+        myFileAdapter.submitList(it)
+      }
+    }
+  }
+
+  private fun setupDialogListeners() {
+    InputDigitDialog.setupEditPriorityListener(
+      parentFragmentManager,
+      viewLifecycleOwner
+    ) { uri: Uri, priority: Int ->
+      viewModel.changeFilePriority(priority, uri)
+    }
+    InputDigitDialog.setupListener(parentFragmentManager, viewLifecycleOwner) {
+      viewModel.changeAutodeletionTimeout(it)
+    }
+    QuestionDialog.setupListener(
+      parentFragmentManager,
+      TIMEOUT_NOT_READY_REQUEST,
+      viewLifecycleOwner
+    ) {
+      showAutoDeletionTimeoutDialog(viewModel.autoDeletionDataState.value)
+    }
+    QuestionDialog.setupListener(
+      parentFragmentManager,
+      XIAOMI_NOTIFICATION_REQUEST,
+      viewLifecycleOwner
+    ) {
+      showXiaomiPermissionRequest()
+      viewModel.xiaomiNotificationSent()
+      viewModel.switchAutoDeletionStatus()
+    }
+    QuestionDialog.setupListener(
+      parentFragmentManager,
+      CONFIRM_AUTODELETION_REQUEST,
+      viewLifecycleOwner
+    ) {
+      viewModel.switchAutoDeletionStatus()
+    }
+    QuestionDialog.setupListener(parentFragmentManager, CONFIRM_CLEAR_REQUEST, viewLifecycleOwner) {
+      viewModel.clearFilesDb()
+    }
+  }
+
+  private fun setupSort() {
+    binding.sort.setOnClickListener {
+      showSortingMenu()
+    }
+  }
+
+  private fun MyFileAdapter.setRecyclerViewListeners() {
+    this.onItemLongClickListener = {
+      InfoDialog.show(
+        parentFragmentManager,
+        getString(R.string.about_file_title),
+        getString(R.string.fileDetails, it.path, it.sizeFormated, it.priority)
+      )
+    }
+    this.onDeleteItemClickListener = { viewModel.removeFileFromDb(it) }
+    this.onEditItemClickListener = {
+      InputDigitDialog.showPriorityEditor(
+        parentFragmentManager,
+        getString(R.string.changePriority),
+        it.priority.toString(),
+        getString(R.string.file, it.path),
+        it.uri.toString(),
+        0..10000
+      )
+    }
+  }
+
+  private fun setupRecyclerView() {
+    with(binding.items) {
+      myFileAdapter.setRecyclerViewListeners()
+      adapter = myFileAdapter
+      val itemTouchHelper = ItemTouchHelper(MyTouchHelper(dpi))
+      itemTouchHelper.attachToRecyclerView(this)
+    }
+  }
+
+  private fun setupFABs() {
+    changeVisibility()
+    binding.add.setOnClickListener {
+      changeVisibility()
+    }
+    setupAddFolderButton()
+    setupAddFileButton()
+  }
+
+  private fun setupAddFileButton() {
+    val fileSelectionLauncher =
+      registerForActivityResult(ActivityResultContracts.OpenDocument()) { file ->
+        requireActivity().grantUriPermission(
+          requireActivity().packageName,
+          file,
+          Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+        contentResolver.takePersistableUriPermission(file!!, takeFlags)
+        try {
+          viewModel.addFileToDb(file, false)
+        } catch (e: Exception) {
+          Toast.makeText(requireContext(), getString(R.string.file_removed), Toast.LENGTH_LONG)
+            .show()
+        }
+        changeVisibility()
+      }
+
+    binding.addFile.setOnClickListener {
+      fileSelectionLauncher.launch(arrayOf("*/*"))
+    }
+  }
+
+  private fun setupAddFolderButton() {
     val folderSelectionLauncher =
       registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { folder ->
         requireActivity().grantUriPermission(
@@ -99,235 +228,225 @@ class DeletionSettingsFragment : Fragment() {
         )
         contentResolver.takePersistableUriPermission(folder!!, takeFlags)
         try {
-          viewModel.addFile(folder, false)
+          viewModel.addFileToDb(folder, true)
         } catch (e: Exception) {
-          Toast.makeText(requireContext(), getString(R.string.folder_removed), Toast.LENGTH_LONG).show()
+          Toast.makeText(requireContext(), getString(R.string.folder_removed), Toast.LENGTH_LONG)
+            .show()
         }
         changeVisibility()
       }
-
-    val fileSelectionLauncher =
-      registerForActivityResult(ActivityResultContracts.OpenDocument()) { file ->
-        requireActivity().grantUriPermission(
-          requireActivity().packageName,
-          file,
-          Intent.FLAG_GRANT_READ_URI_PERMISSION
-        )
-        contentResolver.takePersistableUriPermission(file!!, takeFlags)
-        val media = file.isMediaDocument
-        if (media && viewModel.version in 30..32)
-          dialogHelper.infoDialog(
-            getString(R.string.file_removed),
-            getString(R.string.problematic_file,file.path)
-          )
-        else {
-          try {
-          viewModel.addFile(file, media)
-          } catch (e: Exception) {
-            Toast.makeText(requireContext(), getString(R.string.file_removed), Toast.LENGTH_LONG).show()
-          }
-        }
-        changeVisibility()
-      }
-
-    deletionSettingsBinding.addFolder.setOnClickListener {
+    binding.addFolder.setOnClickListener {
       val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
       intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
       intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
       intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
       folderSelectionLauncher.launch(intent.data)
     }
-    deletionSettingsBinding.addFile.setOnClickListener {
-      fileSelectionLauncher.launch(arrayOf("*/*"))
-    }
-
-    viewModel.back.observe(requireActivity()) {
-      controller.popBackStack()
-    }
-    //Обработка событий из ViewModel
-    viewModel.action.observe(requireActivity()) {
-      when (it.get()?.type) {
-        Request.Type.ALERT ->
-          dialogHelper.infoDialog(it.list[0], it.list[1])
-        Request.Type.QUESTION ->
-          dialogHelper.questionDialog(it.list[0], it.list[1], it.list[2])
-        Request.Type.TIMEOUT -> dialogHelper.inputDialog(
-          "putTimeOut",
-          it.list[0],
-          it.list[1],
-          it.list[2],
-          dpi
-        )
-        Request.Type.PRIORITY -> dialogHelper.inputDialog(
-          "editPriority",
-          it.list[0],
-          it.list[1],
-          it.list[2],
-          dpi
-        )
-        Request.Type.TOAST ->
-          Toast.makeText(
-            context,
-            it.list[0],
-            Toast.LENGTH_LONG
-          ).show()
-
-        else -> {}
-      }
-    }
-
-    //Обработка результатов диалогов с пользователем
-    setFragmentResultListener(
-      "request"
-    ) { _, result ->
-      when (result.getString("response")) {
-        "clear" -> viewModel.clear()
-        "chinese" -> {
-          chinese()
-          viewModel.launch(true)
-        }
-        "start" -> viewModel.launch()
-        "editPriority" -> {
-          if (viewModel.editPriority(result.getString("extra") ?: " "))
-            controller.popBackStack()
-        }
-        "putTimeOut" -> {
-          if (viewModel.putTimeout(result.getString("extra") ?: " "))
-            controller.popBackStack()
-        }
-        "notification" -> {
-          viewModel.notified()
-        }
-      }
-    }
-    requireActivity().addMenuProvider(object : MenuProvider {
-      //снятие/восстановление маскировки
-      override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.main, menu)
-        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.autodelete)
-        (activity as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        viewModel.started.observe(requireActivity()) {
-          with(menu.findItem(R.id.start)!!) {
-            if (it) {
-              setIcon(R.drawable.ic_baseline_pause_24)
-            } else {
-              setIcon(R.drawable.ic_baseline_play_arrow_24)
-            }
-          }
-        }
-      }
-
-      //Открытие других экранов
-      override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-        when (menuItem.itemId) {
-          R.id.help -> dialogHelper.infoDialog(
-            getString(R.string.help),
-            getString(R.string.long_help)
-          )
-          R.id.timeout -> viewModel.timer()
-          R.id.start -> viewModel.switch()
-          R.id.clear -> dialogHelper.questionDialog(
-            "clear",
-            getString(R.string.apply),
-            getString(R.string.want_to_clear)
-          )
-          android.R.id.home -> controller.popBackStack()
-        }
-        return true
-      }
-    }, viewLifecycleOwner, Lifecycle.State.RESUMED)
-    return deletionSettingsBinding.root
   }
 
-  //Смена видимости дополнительных FAB, предупреждение пользователю
-  private fun addItem() {
-    if (!viewModel.notified) {
-      if (viewModel.version in 30..32)
-        dialogHelper.questionDialog(
-          "notification",
-          getString(R.string.attention),
-          getString(R.string.trouble_with_mediafiles, android.os.Build.MODEL)
-        )
-    }
-    changeVisibility()
-  }
-
+  //Смена видимости дополнительных FAB
   private fun changeVisibility() {
     if (allFabsVisible) {
-      deletionSettingsBinding.addFile.hide()
-      deletionSettingsBinding.addFolder.hide()
-      deletionSettingsBinding.add.shrink()
+      binding.addFile.hide()
+      binding.addFolder.hide()
+      binding.add.shrink()
     } else {
-      deletionSettingsBinding.add.extend()
-      deletionSettingsBinding.addFile.show()
-      deletionSettingsBinding.addFolder.show()
+      binding.add.extend()
+      binding.addFile.show()
+      binding.addFolder.show()
     }
     allFabsVisible = !allFabsVisible
   }
 
   //Сортировка списка
-  private fun menu(id: Int) {
-    val popup = PopupMenu(context, requireActivity().findViewById(id))
-    popup.menuInflater.inflate(R.menu.menu, popup.menu)
+  private fun showSortingMenu() {
+    val popup = PopupMenu(context, binding.sort)
+    popup.menuInflater.inflate(R.menu.sorting, popup.menu)
     popup.setOnMenuItemClickListener {
       val priority = when (it.itemId) {
         R.id.maxpriority -> {
-          deletionSettingsBinding.sort.text =
+          binding.sort.text =
             resources.getString(R.string.maxpr)
-          MySortedList.Priority.PRIORITY_DESCENDING
+          FilesSortOrder.PRIORITY_DESC
         }
+
         R.id.minpriority -> {
-          deletionSettingsBinding.sort.text =
+          binding.sort.text =
             resources.getString(R.string.minpr)
-          MySortedList.Priority.PRIORITY_ASCENDING
+          FilesSortOrder.PRIORITY_ASC
         }
+
         R.id.alphabet -> {
-          deletionSettingsBinding.sort.text =
+          binding.sort.text =
             resources.getString(R.string.alphabet)
-          MySortedList.Priority.PATH_ASCENDING
+          FilesSortOrder.NAME_ASC
         }
+
         R.id.desalphabet -> {
-          deletionSettingsBinding.sort.text =
+          binding.sort.text =
             resources.getString(R.string.disalphabet)
-          MySortedList.Priority.PATH_DESCENDING
+          FilesSortOrder.NAME_DESC
         }
+
         R.id.maxsize -> {
-          deletionSettingsBinding.sort.text =
+          binding.sort.text =
             resources.getString(R.string.sizebig)
-          MySortedList.Priority.SIZE_DESCENDING
+          FilesSortOrder.SIZE_DESC
         }
+
         R.id.minsize -> {
-          deletionSettingsBinding.sort.text =
+          binding.sort.text =
             resources.getString(R.string.sizesmall)
-          MySortedList.Priority.SIZE_ASCENDING
+          FilesSortOrder.SIZE_ASC
         }
-        else -> null
+
+        else -> throw RuntimeException("Wrong priority in priority sorting")
       }
-      viewModel.sort(priority!!)
+      viewModel.changeSortOrder(priority)
       return@setOnMenuItemClickListener true
     }
     popup.show()
   }
 
+  private fun showAutoDeletionTimeoutDialog(value: DeletionSettingsState) {
+    if (value is DeletionSettingsState.ViewData) {
+      InputDigitDialog.show(
+        parentFragmentManager,
+        getString(R.string.timeout_please),
+        value.timeout.toString(),
+        getString(R.string.timeout_long),
+        1..1000
+      )
+    }
+  }
+
+  private fun changeAutoDeletionStatus(value: DeletionSettingsState) {
+    if (value is DeletionSettingsState.ViewData) {
+      when (value.status) {
+        DeletionActivationStatus.ACTIVE -> viewModel.switchAutoDeletionStatus()
+        DeletionActivationStatus.INACTIVE_AND_WITHOUT_TIMEOUT -> showAutoDeletionTimeoutNotReadyDialog()
+        DeletionActivationStatus.INACTIVE_AND_NOT_NOTIFIED_XIAOMI -> showXiaomiPermissionDialog()
+        DeletionActivationStatus.INACTIVE_AND_READY -> showConfirmAutodeletionDialog(value.timeout)
+      }
+    }
+  }
+
+  private fun showXiaomiPermissionDialog() {
+    QuestionDialog.show(
+      parentFragmentManager,
+      getString(R.string.are_you_sure_autodelete),
+      getString(R.string.stupid_chinese_phone),
+      XIAOMI_NOTIFICATION_REQUEST
+    )
+  }
+
+  private fun showConfirmAutodeletionDialog(timeOut: Int) {
+    QuestionDialog.show(
+      parentFragmentManager,
+      getString(R.string.are_you_sure_autodelete),
+      getString(R.string.final_explanation, timeOut),
+      CONFIRM_AUTODELETION_REQUEST
+    )
+  }
+
+  private fun showAutoDeletionTimeoutNotReadyDialog() {
+    QuestionDialog.show(
+      parentFragmentManager,
+      getString(R.string.please_set_timeout1),
+      getString(R.string.please_set_timeout2),
+      TIMEOUT_NOT_READY_REQUEST
+    )
+  }
+
+  private fun setupActionBar() {
+    requireActivity().addMenuProvider(object : MenuProvider {
+      //Отрисовка ActionBar
+      override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+        menuInflater.inflate(R.menu.autodeletion, menu)
+        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.autodelete)
+        (activity as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        lifecycleScope.launch {
+          drawSwitchAutodeletionStatusButton(menu)
+        }
+      }
+
+      //Реакция на клики по кнопкам в ActionBar
+      override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+        when (menuItem.itemId) {
+          R.id.help -> InfoDialog.show(
+            parentFragmentManager, getString(R.string.help),
+            getString(R.string.long_help)
+          )
+
+          R.id.timeout -> showAutoDeletionTimeoutDialog(viewModel.autoDeletionDataState.value)
+          R.id.start -> changeAutoDeletionStatus(viewModel.autoDeletionDataState.value)
+          R.id.clear -> QuestionDialog.show(
+            parentFragmentManager,
+            getString(R.string.apply),
+            getString(R.string.want_to_clear),
+            CONFIRM_CLEAR_REQUEST
+          )
+
+          android.R.id.home -> controller.popBackStack()
+        }
+        return true
+      }
+    }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+  }
+
+  private suspend fun drawSwitchAutodeletionStatusButton(menu: Menu) {
+    viewModel.autoDeletionDataState.collect {
+      val resource = when (it) {
+        is DeletionSettingsState.Loading -> R.drawable.ic_baseline_pause_24
+        is DeletionSettingsState.ViewData -> {
+          if (it.status == DeletionActivationStatus.ACTIVE) {
+            R.drawable.ic_baseline_pause_24
+          } else {
+            R.drawable.ic_baseline_play_arrow_24
+          }
+        }
+      }
+      withContext(Main) {
+        val startIcon = menu.findItem(R.id.start)
+          ?: throw RuntimeException("Start autodeletion button not found")
+        startIcon.setIcon(resource)
+      }
+    }
+  }
+
   //Запуск настроек автозагрузки Xiaomi
-  private fun chinese() {
+  private fun showXiaomiPermissionRequest() {
     val intent = Intent()
     intent.component = ComponentName(
-      "com.miui.securitycenter",
-      "com.miui.permcenter.autostart.AutoStartManagementActivity"
+      XIAOMI_SECURITY_PACKAGE,
+      XIAOMI_REQUEST_CLASS
     )
     try {
       startActivity(intent)
     } catch (e: Exception) {
-
+      Toast.makeText(
+        context,
+        getString(R.string.xiaomi_request_failed, e.message),
+        Toast.LENGTH_SHORT
+      ).show()
     }
   }
 
 
-  //сохранение данных при остановке activity
-  override fun onStop() {
-    viewModel.save()
-    super.onStop()
+  //Обнуление binding
+  override fun onDestroy() {
+    _binding=null
+    super.onDestroy()
+  }
+
+  companion object {
+    private const val TIMEOUT_NOT_READY_REQUEST = "set_timeout_request"
+    private const val CONFIRM_AUTODELETION_REQUEST = "confirm_autodeletion_start"
+    private const val CONFIRM_CLEAR_REQUEST = "confirm_clear_request"
+    private const val XIAOMI_NOTIFICATION_REQUEST = "show_xiaomi_notification"
+    private const val XIAOMI_SECURITY_PACKAGE = "com.miui.securitycenter"
+    private const val XIAOMI_REQUEST_CLASS =
+      "com.miui.permcenter.autostart.AutoStartManagementActivity"
   }
 
 }

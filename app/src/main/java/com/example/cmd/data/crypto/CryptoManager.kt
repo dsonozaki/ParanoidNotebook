@@ -1,7 +1,9 @@
 package com.example.cmd.data.crypto
 
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.util.Log
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.KeyStore
@@ -14,40 +16,47 @@ import javax.inject.Inject
 
 //Класс, отвечающий за шифрование и дешифрование данных. Сделать синглтоном
 class CryptoManager @Inject constructor() {
-  private val keystore = KeyStore.getInstance("AndroidKeyStore").apply {
+  private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply {
     load(null)
   }
 
-  private val encryptCipher = Cipher.getInstance(TRANSFORMATION).apply {
+  private val encryptCipher get() = Cipher.getInstance(TRANSFORMATION).apply {
     init(Cipher.ENCRYPT_MODE, getKey())
   }
 
-  private fun getKey(): SecretKey {
-    val existingKey = keystore.getEntry(ALIAS,null) as? KeyStore.SecretKeyEntry
-    return existingKey?.secretKey ?: createKey()
-  }
-
-  private fun createKey() : SecretKey {
-    return KeyGenerator.getInstance(ALGORITHM).apply {
-      init(KeyGenParameterSpec.Builder(ALIAS, PURPOSES).setBlockModes(BLOCK_MODE)
-        .setEncryptionPaddings(PADDING)
-        .setRandomizedEncryptionRequired(true)
-        .setUserAuthenticationRequired(false)
-        .build())
-    }.generateKey()
-  }
-
-  private fun decryptCipherForIv(iv: ByteArray): Cipher {
+  private fun getDecryptCipherForIv(iv: ByteArray): Cipher {
     return Cipher.getInstance(TRANSFORMATION).apply {
-      init(Cipher.DECRYPT_MODE,getKey(), IvParameterSpec(iv))
+      init(Cipher.DECRYPT_MODE, getKey(), IvParameterSpec(iv))
     }
   }
 
+  private fun getKey(): SecretKey {
+    val existingKey = keyStore.getEntry("secret", null) as? KeyStore.SecretKeyEntry
+    return existingKey?.secretKey ?: createKey()
+  }
+
+  private fun createKey(): SecretKey {
+    return KeyGenerator.getInstance(ALGORITHM).apply {
+      init(
+        KeyGenParameterSpec.Builder(
+          "secret",
+          KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+        )
+          .setBlockModes(BLOCK_MODE)
+          .setEncryptionPaddings(PADDING)
+          .setUserAuthenticationRequired(false)
+          .setRandomizedEncryptionRequired(true)
+          .build()
+      )
+    }.generateKey()
+  }
+
   fun encryptToFile(bytes: ByteArray, outputStream: OutputStream): ByteArray {
-    val encryptedBytes = encryptCipher.doFinal(bytes)
+    val cypher = encryptCipher
+    val encryptedBytes = cypher.doFinal(bytes)
     outputStream.use {
-      it.write(encryptCipher.iv.size)
-      it.write(encryptCipher.iv)
+      it.write(cypher.iv.size)
+      it.write(cypher.iv)
       it.write(encryptedBytes.size)
       it.write(encryptedBytes)
     }
@@ -62,38 +71,49 @@ class CryptoManager @Inject constructor() {
       val encryptedBytesSize = it.read()
       val encryptedBytes = ByteArray(encryptedBytesSize)
       it.read(encryptedBytes)
-      decryptCipherForIv(iv).doFinal(encryptedBytes)
+      getDecryptCipherForIv(iv).doFinal(encryptedBytes)
     }
   }
 
   fun encryptString(input: String): String = buildString {
     val bytes = input.toByteArray()
-    val encryptedBytes = encryptCipher.doFinal(bytes)
+    val cypher = encryptCipher
+    val encryptedBytes = cypher.doFinal(bytes)
+    if (Build.VERSION.SDK_INT >= 26) {
     val encoder = Base64.getEncoder()
-    append(encoder.encodeToString(encryptCipher.iv))
+    append(encoder.encodeToString(cypher.iv))
     append(DELIMITER)
     append(encoder.encodeToString(encryptedBytes))
+    } else {
+      append(android.util.Base64.encodeToString(cypher.iv, 0))
+      append(DELIMITER)
+      append(android.util.Base64.encodeToString(encryptedBytes, 0))
+    }
   }
 
   fun decryptString(input: String): String = buildString {
     val (ivEncoded, passwordEncoded) = input.split(DELIMITER)
-    val decoder = Base64.getDecoder()
-    val iv = decoder.decode(ivEncoded)
-    val passwordCiphered = decoder.decode(passwordEncoded)
-    append(decryptCipherForIv(iv).doFinal(passwordCiphered))
+    Log.w("ivEncoded",ivEncoded)
+    Log.w("byte20", Char(20).toString())
+    Log.w("passwordEncoded",passwordEncoded)
+    if (Build.VERSION.SDK_INT >= 26) {
+      val decoder = Base64.getDecoder()
+      val iv = decoder.decode(ivEncoded)
+      val passwordCiphered = decoder.decode(passwordEncoded)
+      append(getDecryptCipherForIv(iv).doFinal(passwordCiphered))
+    } else {
+      val iv = android.util.Base64.decode(ivEncoded,0)
+      val passwordCiphered = android.util.Base64.decode(passwordEncoded,0)
+      append(getDecryptCipherForIv(iv).doFinal(passwordCiphered))
+    }
   }
-
-
-
 
 
   companion object {
     private const val ALGORITHM = KeyProperties.KEY_ALGORITHM_AES
     private const val BLOCK_MODE = KeyProperties.BLOCK_MODE_CBC
     private const val PADDING = KeyProperties.ENCRYPTION_PADDING_PKCS7
-    private const val PURPOSES = KeyProperties.PURPOSE_DECRYPT or KeyProperties.PURPOSE_ENCRYPT
     private const val TRANSFORMATION = "$ALGORITHM/$BLOCK_MODE/$PADDING"
-    private const val ALIAS = "NotepadKey"
     private const val DELIMITER = "|"
   }
 

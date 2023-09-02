@@ -1,86 +1,96 @@
 package com.example.cmd.presentation.fragments
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.res.ResourcesCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.example.cmd.R
-import com.example.cmd.databinding.EditPasswordsBinding
-import com.example.cmd.presentation.factory.EditPasswordsFactory
+import androidx.navigation.fragment.navArgs
+import com.example.cmd.databinding.EditPasswordsFragmentBinding
 import com.example.cmd.presentation.viewmodels.EditPasswordsVM
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class EditPasswordsFragment : Fragment() {
-  private val viewModel by viewModels<EditPasswordsVM> {
-    EditPasswordsFactory(
-      requireContext()
-    )
-  }
+  private val viewModel: EditPasswordsVM by viewModels()
   private val controller by lazy { findNavController() }
+  private var _editPasswordsBinding: EditPasswordsFragmentBinding? = null
+
+  private val editPasswordsBinding
+    get() = _editPasswordsBinding ?: throw RuntimeException("EditPasswordsFragmentBinding == null")
+
+  private val args by navArgs<EditPasswordsFragmentArgs>()
 
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
     savedInstanceState: Bundle?
   ): View {
+    _editPasswordsBinding = EditPasswordsFragmentBinding.inflate(inflater, container, false)
+    editPasswordsBinding.viewmodel = viewModel
+    editPasswordsBinding.lifecycleOwner = viewLifecycleOwner
+    return editPasswordsBinding.root
+  }
+
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    super.onViewCreated(view, savedInstanceState)
     (activity as AppCompatActivity).supportActionBar?.hide()
-    val passwordsBinding = EditPasswordsBinding.inflate(inflater, container, false)
-    passwordsBinding.viewmodel = viewModel
-    passwordsBinding.lifecycleOwner = this
-
-    //Смена цвета кнопки
-    viewModel.color.observe(requireActivity()) {
-      if (it) {
-        setColor(passwordsBinding, R.color.amtheme)
-      } else {
-        setColor(passwordsBinding, R.color.lightgrey)
-      }
-    }
-    viewModel.back.observe(requireActivity()) {
-      if (it) {
-        controller.popBackStack()
-      } else {
-        controller.navigate(R.id.passwordsInitialized)
-      }
-    }
-
-    viewModel.toastMessage.observe(requireActivity()) { request ->
-      request.get()?.let {
-        Toast.makeText(
-          context,
-          getString(R.string.passwords_intersection, it.list[0], it.list[1]),
-          Toast.LENGTH_SHORT
-        ).show()
-      }
-    }
-    return passwordsBinding.root
+    setupButtons()
+    setupTextChangedListener()
+    setupGoToMainScreenListener()
   }
 
-  private fun setColor(passwordsBinding: EditPasswordsBinding, color: Int) {
-    passwordsBinding.nextButton.strokeColor = ColorStateList.valueOf(
-      ResourcesCompat.getColor(
-        resources,
-        color, requireActivity().theme
-      )
-    )
-    passwordsBinding.nextButton.setTextColor(
-      ColorStateList.valueOf(
-        ResourcesCompat.getColor(
-          resources,
-          color, requireActivity().theme
-        )
-      )
-    )
+  private fun setupGoToMainScreenListener() {
+    lifecycleScope.launch {
+      viewModel.goToMainScreenFlow.collect {
+        controller.navigate(EditPasswordsFragmentDirections.passwordsInitialized())
+      }
+    }
   }
 
-  override fun onPause() {
+  private fun setupTextChangedListener() {
+    editPasswordsBinding.settingsPasswordInput.addTextChangedListener {
+      viewModel.passwordsChanged(
+        editPasswordsBinding.mainPasswordInput.text.toString(),
+        it.toString()
+      )
+    }
+    editPasswordsBinding.mainPasswordInput.addTextChangedListener {
+      viewModel.passwordsChanged(
+        it.toString(),
+        editPasswordsBinding.settingsPasswordInput.text.toString()
+      )
+    }
+  }
+
+  private fun setupButtons() {
+    if (args.firstPassword) {
+      editPasswordsBinding.backButton.visibility = View.GONE
+    } else {
+      editPasswordsBinding.backButton.setOnClickListener {
+          controller.popBackStack()
+        }
+    }
+    editPasswordsBinding.nextButton.setOnClickListener {
+      viewModel.updatePasswords(
+        editPasswordsBinding.mainPasswordInput.text.toString(),
+        editPasswordsBinding.settingsPasswordInput.text.toString()
+      )
+    }
+  }
+
+
+
+  override fun onDestroyView() {
+    super.onDestroyView()
     (activity as AppCompatActivity).supportActionBar?.show()
-    super.onPause()
+    _editPasswordsBinding = null
   }
+
 }

@@ -3,6 +3,7 @@ package com.example.cmd.presentation.dialogs
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
+import android.net.Uri
 import android.os.Bundle
 import android.text.Html
 import android.view.View
@@ -22,6 +23,9 @@ class InputDigitDialog : DialogFragment() {
     val message = arguments?.getString(MESSAGE) ?: throw RuntimeException("Message absent in InputDigitDialog")
     val title = arguments?.getString(TITLE) ?: throw RuntimeException("Title absent in InputDigitDialog")
     val hint = arguments?.getString(HINT) ?: throw RuntimeException("Hint absent in InputDigitDialog")
+    val requestKey = arguments?.getString(ARG_REQUEST_KEY) ?: throw RuntimeException("Request key absent in InputDigitDialog")
+    val minimum = arguments?.getInt(MINIMUM)?: throw RuntimeException("Minimum absent in InputDigitDialog")
+    val maximum = arguments?.getInt(MAXIMUM) ?: throw RuntimeException("Maximum absent in InputDigitDialog")
     val dialogBinding = InputDialogFragmentBinding.inflate(layoutInflater)
     dialogBinding.inputEditText.hint = hint
     val dialog =  AlertDialog.Builder(requireActivity(), R.style.DarkDialogTheme)
@@ -42,11 +46,17 @@ class InputDigitDialog : DialogFragment() {
           return@setOnClickListener
         }
         val text = enteredText.toIntOrNull()
-        if (text == null){
-          dialogBinding.inputEditText.error = getString(R.string.incorrect_number_in_dialog)
+        if (text == null || text !in minimum..maximum){
+          dialogBinding.inputEditText.error = getString(R.string.number_out_of_range)
           return@setOnClickListener
         }
-        parentFragmentManager.setFragmentResult(REQUEST_KEY, bundleOf(RESPONSE to text))
+        if (requestKey == EDIT_PRIORITY_REQUEST) {
+          val fileUri = arguments?.getString(
+            FILE_URI) ?: throw RuntimeException("File Uri is not provided in priority editor")
+          parentFragmentManager.setFragmentResult(requestKey, bundleOf(RESPONSE to text, FILE_URI to fileUri))
+        } else {
+          parentFragmentManager.setFragmentResult(requestKey, bundleOf(RESPONSE to text))
+        }
         dismiss()
       }
     }
@@ -76,18 +86,35 @@ class InputDigitDialog : DialogFragment() {
     const val MESSAGE = "message"
     const val TITLE = "title"
     const val HINT = "hint"
-    val TAG = QuestionDialog::class.simpleName
-    val REQUEST_KEY = "$TAG ENTERED"
+    private val TAG = QuestionDialog::class.simpleName
+    const val ARG_REQUEST_KEY = "ARG_REQUEST_KEY"
     const val RESPONSE = "RESPONSE"
-    fun show(fragmentManager: FragmentManager, title: String, hint: String, message: String) {
+    const val EDIT_PRIORITY_REQUEST = "EDIT_PRIORITY_REQUEST"
+    private const val EDIT_INT_REQUEST = "EDIT_INT_REQUEST"
+    const val FILE_URI = "FILE_URI"
+    private const val MINIMUM = "MINIMUM"
+    private const val MAXIMUM = "MAXIMUM"
+    fun show(fragmentManager: FragmentManager, title: String, hint: String, message: String, range: IntRange) {
       val fragment = InputDigitDialog().apply {
-        arguments = bundleOf(TITLE to title,MESSAGE to message, HINT to hint)
+        arguments = bundleOf(TITLE to title,MESSAGE to message, HINT to hint, ARG_REQUEST_KEY to EDIT_INT_REQUEST, MINIMUM to range.first, MAXIMUM to range.last)
       }
       fragment.show(fragmentManager,TAG)
     }
 
+    fun showPriorityEditor(fragmentManager: FragmentManager, title: String, hint: String, message: String, uri: String, range: IntRange) {
+      val fragment = InputDigitDialog().apply {
+        arguments = bundleOf(TITLE to title,MESSAGE to message, HINT to hint, FILE_URI to uri, ARG_REQUEST_KEY to EDIT_PRIORITY_REQUEST, MINIMUM to range.first, MAXIMUM to range.last)
+      }
+      fragment.show(fragmentManager,TAG)
+    }
+
+    fun setupEditPriorityListener(fragmentManager: FragmentManager, lifecycleOwner: LifecycleOwner, listener: (Uri, Int) -> Unit) {
+      fragmentManager.setFragmentResultListener(EDIT_PRIORITY_REQUEST,lifecycleOwner
+      ) { _, result -> listener.invoke(Uri.parse(result.getString(FILE_URI)),result.getInt(RESPONSE)) }
+    }
+
     fun setupListener(fragmentManager: FragmentManager, lifecycleOwner: LifecycleOwner, listener: (Int) -> Unit) {
-      fragmentManager.setFragmentResultListener(REQUEST_KEY,lifecycleOwner
+      fragmentManager.setFragmentResultListener(EDIT_INT_REQUEST,lifecycleOwner
       ) { _, result -> listener.invoke(result.getInt(RESPONSE)) }
     }
 

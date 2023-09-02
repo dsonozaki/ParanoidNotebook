@@ -21,7 +21,7 @@ class QuestionDialog : DialogFragment() {
       .setTitle(title)
       .setMessage(HtmlCompat.fromHtml(message, HtmlCompat.FROM_HTML_MODE_LEGACY))
       .setNegativeButton(R.string.cancel) { dialog: DialogInterface, i: Int -> dialog.cancel() }
-      .setPositiveButton(R.string.ok) { _, which ->
+      .setPositiveButton(R.string.ok) { _, _ ->
         parentFragmentManager.setFragmentResult(
           requestKEy,
           bundleOf(RESPONSE to true)
@@ -43,9 +43,9 @@ class QuestionDialog : DialogFragment() {
       fragment.show(fragmentManager,TAG)
     }
 
-    fun setupListener(fragmentManager: FragmentManager, requestKey: String, lifecycleOwner: LifecycleOwner, listener: (Boolean) -> Unit) {
+    fun setupListener(fragmentManager: FragmentManager, requestKey: String, lifecycleOwner: LifecycleOwner, listener: () -> Unit) {
       fragmentManager.setFragmentResultListener(requestKey,lifecycleOwner
-      ) { _, result -> listener.invoke(result.getBoolean(RESPONSE)) }
+      ) { _, _ -> listener.invoke() }
     }
 
   }

@@ -3,12 +3,12 @@ package com.example.cmd.presentation.states
 import com.example.cmd.presentation.utils.UIText
 import java.time.LocalDateTime
 
-sealed class LogsScreenState {
+sealed class LogsScreenState(open val date: LocalDateTime) {
 
-  class Loading(private val date: LocalDateTime = LocalDateTime.now()) :
-    LogsScreenState()
+  class Loading(override val date: LocalDateTime = LocalDateTime.now()) :
+    LogsScreenState(date)
 
-  class ViewLogs(val date: LocalDateTime, val logs: UIText.ColoredHTMLText) :
-    LogsScreenState()
+  class ViewLogs(override val date: LocalDateTime, val logs: UIText.ColoredHTMLText) :
+    LogsScreenState(date)
 
 }

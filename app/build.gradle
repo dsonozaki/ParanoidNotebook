@@ -1,129 +1,133 @@
-
 plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-    id 'kotlin-kapt'
-    id 'org.jetbrains.kotlin.plugin.serialization'
-    id 'com.google.dagger.hilt.android'
+  id 'com.android.application'
+  id 'org.jetbrains.kotlin.android'
+  id 'kotlin-kapt'
+  id 'org.jetbrains.kotlin.plugin.serialization'
+  id 'com.google.dagger.hilt.android'
+
 }
 
 android {
-    compileSdk 33
+  compileSdk 34
 
-    defaultConfig {
-        applicationId "com.example.cmd"
-        minSdk 24
-        targetSdk 33
-        versionCode 1
-        versionName "1.0"
-        vectorDrawables.useSupportLibrary = true
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+  defaultConfig {
+    applicationId "com.example.cmd"
+    minSdk 24
+    targetSdk 34
+    versionCode 2
+    versionName "2.0"
+    vectorDrawables.useSupportLibrary = true
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    kapt {
+      arguments { arg("room.schemaLocation", "$projectDir/schemas") }
     }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
+  }
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
-    dataBinding{
-        enabled true
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-        coreLibraryDesugaringEnabled true
-    }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-    buildFeatures {
-        viewBinding true
-    }
+  }
+  dataBinding {
+    enabled true
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+    coreLibraryDesugaringEnabled true
+  }
+  kotlinOptions {
+    jvmTarget = '1.8'
+  }
+  buildFeatures {
+    viewBinding true
+  }
   namespace 'com.example.cmd'
 }
 
 apply plugin: 'kotlin-kapt'
+apply plugin: 'androidx.navigation.safeargs.kotlin'
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.10.1'
-    ext.navigation_version = "2.7.0"
-    ext.room_version = "2.5.2"
-    ext.lifecycle_version = "2.5.1"
-    ext.runtime_ktx_version = "2.8.1"
-    ext.annotation_version = "1.5.0"
-    ext.first_version = "1.0.0"
-    ext.sqlcipher_version = "4.4.0"
-    ext.sqlite_version = "2.3.1"
-    ext.coroutines_version = "1.7.3"
-    ext.fragment_version = "1.5.3"
-    ext.storage_version =  "1.5.5"
-    ext.core_ktx_version = "1.10.1"
-    ext.appcompat_version = "1.6.1"
-    ext.constraint_version = "2.1.4"
-    ext.security_version = "1.1.0-alpha06"
-    ext.junit_version = "4.13.2"
-    ext.android_junit_version = "1.1.5"
-    ext.datetime_version = "0.4.0"
-    ext.espresso_version = "3.5.1"
-    ext.coil_version = "2.1.0"
-    ext.fragment_version = "1.7.0-alpha02"
-    ext.datastore_version = "1.0.0"
-    ext.dagger_version ="2.35.1"
-    ext.collections_version="0.3.5"
-    ext.serialization_version="1.3.2"
-    ext.datastore_1_version="1.0.0"
-    ext.hilt_version = "2.44"
-    ext.material_version = "1.9.0"
-    ext.desugaring_version = "2.0.3"
-    ext.hilt_worker_version = "1.0.0"
-    implementation "com.google.dagger:dagger:$dagger_version"
-    kapt "com.google.dagger:dagger-compiler:$dagger_version"
-    implementation "androidx.datastore:datastore-preferences:$datastore_version"
-    implementation("androidx.room:room-runtime:$room_version")
-    implementation "androidx.work:work-runtime-ktx:$runtime_ktx_version"
-    implementation "androidx.legacy:legacy-support-v4:$first_version"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
-    implementation "androidx.annotation:annotation:$annotation_version"
-    annotationProcessor("androidx.room:room-compiler:$room_version")
-    kapt("androidx.room:room-compiler:$room_version")
-    implementation "net.zetetic:android-database-sqlcipher:$sqlcipher_version"
-    implementation "androidx.sqlite:sqlite:$sqlite_version"
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
-    implementation("androidx.navigation:navigation-fragment:$navigation_version")
-    implementation("androidx.navigation:navigation-ui:$navigation_version")
-    implementation ("androidx.fragment:fragment-ktx:$fragment_version")
-    implementation "com.anggrayudi:storage:$storage_version"
-    implementation "androidx.hilt:hilt-work:$hilt_worker_version"
-    kapt "androidx.hilt:hilt-compiler:$hilt_worker_version"
-    // Kotlin
-    implementation("androidx.navigation:navigation-fragment-ktx:$navigation_version")
-    implementation("androidx.navigation:navigation-ui-ktx:$navigation_version")
-    // Feature module Support
-    implementation("androidx.navigation:navigation-dynamic-features-fragment:$navigation_version")
-    // Testing Navigation
-    androidTestImplementation("androidx.navigation:navigation-testing:$navigation_version")
-    // Jetpack Compose Integration
-    implementation("androidx.navigation:navigation-compose:$navigation_version")
-    implementation "androidx.core:core-ktx:$core_ktx_version"
-    implementation "androidx.appcompat:appcompat:$appcompat_version"
-    implementation "com.google.android.material:material:$material_version"
-    implementation "androidx.constraintlayout:constraintlayout:$constraint_version"
-    implementation "androidx.security:security-crypto-ktx:$security_version"
-    testImplementation "junit:junit:$junit_version"
-    androidTestImplementation "androidx.test.ext:junit:$android_junit_version"
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetime_version")
-    androidTestImplementation "androidx.test.espresso:espresso-core:$espresso_version"
-    implementation("io.coil-kt:coil:$coil_version")
-    implementation("androidx.fragment:fragment-ktx:$fragment_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:$collections_version")
-    implementation("org.jetbrains.kotlin:kotlinx-serialization-json:$serialization_version")
-    implementation "androidx.datastore:datastore:$datastore_1_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-collections-immutable:$collections_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
-    implementation "com.google.dagger:hilt-android:$hilt_version"
-    kapt "com.google.dagger:hilt-compiler:$hilt_version"
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugaring_version"
+  implementation 'androidx.core:core-ktx:1.10.1'
+  ext.navigation_version = "2.7.1"
+  ext.room_version = "2.6.0-beta01"
+  ext.lifecycle_version = "2.5.1"
+  ext.runtime_ktx_version = "2.8.1"
+  ext.annotation_version = "1.5.0"
+  ext.first_version = "1.0.0"
+  ext.sqlcipher_version = "4.4.0"
+  ext.sqlite_version = "2.3.1"
+  ext.coroutines_version = "1.7.3"
+  ext.fragment_version = "1.5.3"
+  ext.storage_version = "1.5.5"
+  ext.core_ktx_version = "1.10.1"
+  ext.appcompat_version = "1.6.1"
+  ext.constraint_version = "2.1.4"
+  ext.security_version = "1.1.0-alpha06"
+  ext.junit_version = "4.13.2"
+  ext.android_junit_version = "1.1.5"
+  ext.datetime_version = "0.4.0"
+  ext.espresso_version = "3.5.1"
+  ext.coil_version = "2.1.0"
+  ext.fragment_version = "1.7.0-alpha02"
+  ext.datastore_version = "1.0.0"
+  ext.dagger_version = "2.35.1"
+  ext.collections_version = "0.3.5"
+  ext.serialization_version = "1.6.0"
+  ext.datastore_1_version = "1.0.0"
+  ext.hilt_version = "2.47"
+  ext.material_version = "1.9.0"
+  ext.desugaring_version = "2.0.3"
+  ext.hilt_worker_version = "1.0.0"
+  implementation "com.google.dagger:dagger:$dagger_version"
+  kapt "com.google.dagger:dagger-compiler:$dagger_version"
+  implementation "androidx.datastore:datastore-preferences:$datastore_version"
+  implementation("androidx.room:room-ktx:$room_version")
+  implementation "androidx.work:work-runtime-ktx:$runtime_ktx_version"
+  implementation "androidx.legacy:legacy-support-v4:$first_version"
+  implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+  implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+  implementation "androidx.annotation:annotation:$annotation_version"
+  annotationProcessor("androidx.room:room-compiler:$room_version")
+  kapt("androidx.room:room-compiler:$room_version")
+  implementation "androidx.room:room-runtime:$room_version"
+  implementation "net.zetetic:android-database-sqlcipher:$sqlcipher_version"
+  implementation "androidx.sqlite:sqlite:$sqlite_version"
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
+  implementation("androidx.navigation:navigation-fragment:$navigation_version")
+  implementation("androidx.navigation:navigation-ui:$navigation_version")
+  implementation("androidx.fragment:fragment-ktx:$fragment_version")
+  implementation "com.anggrayudi:storage:$storage_version"
+  implementation "androidx.hilt:hilt-work:$hilt_worker_version"
+  kapt "androidx.hilt:hilt-compiler:$hilt_worker_version"
+  // Kotlin
+  implementation("androidx.navigation:navigation-fragment-ktx:$navigation_version")
+  implementation("androidx.navigation:navigation-ui-ktx:$navigation_version")
+  // Feature module Support
+  implementation("androidx.navigation:navigation-dynamic-features-fragment:$navigation_version")
+  // Testing Navigation
+  androidTestImplementation("androidx.navigation:navigation-testing:$navigation_version")
+  // Jetpack Compose Integration
+  implementation("androidx.navigation:navigation-compose:$navigation_version")
+  implementation "androidx.core:core-ktx:$core_ktx_version"
+  implementation "androidx.appcompat:appcompat:$appcompat_version"
+  implementation "com.google.android.material:material:$material_version"
+  implementation "androidx.constraintlayout:constraintlayout:$constraint_version"
+  implementation "androidx.security:security-crypto-ktx:$security_version"
+  testImplementation "junit:junit:$junit_version"
+  androidTestImplementation "androidx.test.ext:junit:$android_junit_version"
+  implementation("org.jetbrains.kotlinx:kotlinx-datetime:$datetime_version")
+  androidTestImplementation "androidx.test.espresso:espresso-core:$espresso_version"
+  implementation("io.coil-kt:coil:$coil_version")
+  implementation("androidx.fragment:fragment-ktx:$fragment_version")
+  implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:$collections_version")
+  implementation "androidx.datastore:datastore:$datastore_1_version"
+  implementation "org.jetbrains.kotlinx:kotlinx-collections-immutable:$collections_version"
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
+  implementation "com.google.dagger:hilt-android:$hilt_version"
+  kapt "com.google.dagger:hilt-compiler:$hilt_version"
+  coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugaring_version"
 }
 
 kapt {

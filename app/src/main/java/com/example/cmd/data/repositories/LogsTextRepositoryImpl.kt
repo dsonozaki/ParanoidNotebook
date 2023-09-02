@@ -73,7 +73,7 @@ class LogsTextRepositoryImpl @Inject constructor(
   private suspend fun initializeDirectory() {
     if (!logsDirectoryInitialized) {
       withContext(Dispatchers.IO) {
-        File(logsDirectory).createNewFile()
+        File(logsDirectory).mkdir()
       }
       logsDirectoryInitialized = true
     }
@@ -100,14 +100,14 @@ class LogsTextRepositoryImpl @Inject constructor(
         when (stringStatus(it)) {
           StringStatus.STRING_BODY -> message += it
           StringStatus.ENCRYPTED_END -> {
-            message += it.dropLast(STRING_ENCODED.length)
+            message += it.dropLast(STRING_ENCODED.length+1)
             message = cryptoManager.decryptString(message)
             appendLine(message)
             message = ""
           }
 
           StringStatus.DECRYPTED_END -> {
-            message += it.dropLast(NORMAL_STRING.length)
+            message += it.dropLast(NORMAL_STRING.length+1)
             appendLine(message)
             message = ""
           }
@@ -138,7 +138,7 @@ class LogsTextRepositoryImpl @Inject constructor(
 
 
   override suspend fun clearLogsForDay(day: String) {
-    File("$logsDirectory/${day}").delete()
+    File("$logsDirectory/$day").delete()
     checkOldLogs(day).let {
       if (it == LogState.CURRENT_LOG_FILE) {
         newLogs.emit(LogEntity(LocalDateTime.now(), "", it))
@@ -152,9 +152,10 @@ class LogsTextRepositoryImpl @Inject constructor(
     LogState.WATCHING_OLD_LOGS
   }
 
-  override suspend fun readLogsForDay(day: String) {
+  override suspend fun readLogsForDay(localDateTime: LocalDateTime) {
+    val day = localDateTime.formatDate()
     val logState = checkOldLogs(day)
-    newLogs.emit(LogEntity(LocalDateTime.parse(day), readFromFile(day), logState))
+    newLogs.emit(LogEntity(localDateTime, readFromFile(day), logState))
   }
 
   private suspend fun checkForNewFile(dateTime: LocalDateTime): LogState {
@@ -189,7 +190,7 @@ class LogsTextRepositoryImpl @Inject constructor(
     }
     val toWrite = java.time.LocalTime.now().format(
       DateTimeFormatter.ofPattern("HH:mm:ss")
-    ) + string
+    ) + ' ' + string
     writer.writeToLogs(toWrite, encrypted)
     newLogs.emit(LogEntity(currentDateTime, toWrite, logState))
   }
@@ -204,8 +205,8 @@ class LogsTextRepositoryImpl @Inject constructor(
   }
 
   companion object {
-    private const val STRING_ENCODED = "ENCODED"
-    private const val NORMAL_STRING = "NORMAL"
+    const val STRING_ENCODED = "ENCODED"
+    const val NORMAL_STRING = "NORMAL"
   }
 
 }

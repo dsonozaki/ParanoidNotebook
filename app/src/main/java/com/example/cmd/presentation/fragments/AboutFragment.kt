@@ -2,7 +2,12 @@ package com.example.cmd.presentation.fragments
 
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import androidx.core.view.MenuProvider
@@ -22,10 +27,8 @@ class AboutFragment: Fragment() {
       AboutFragmentBinding.inflate(inflater,container,false)
     (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.about)
     (activity as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
-    aboutBinding.aboutmessage.setMovementMethod(LinkMovementMethod.getInstance())
-    aboutBinding.aboutmessage.setText(
-      HtmlCompat.fromHtml(getString(R.string.about_long), HtmlCompat.FROM_HTML_MODE_LEGACY)
-    )
+    aboutBinding.aboutmessage.movementMethod = LinkMovementMethod.getInstance()
+    aboutBinding.aboutmessage.text = HtmlCompat.fromHtml(getString(R.string.about_long), HtmlCompat.FROM_HTML_MODE_LEGACY)
     requireActivity().addMenuProvider(object : MenuProvider {
       override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
       }

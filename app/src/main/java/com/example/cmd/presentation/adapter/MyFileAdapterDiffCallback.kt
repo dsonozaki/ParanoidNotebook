@@ -2,8 +2,9 @@ package com.example.cmd.presentation.adapter
 
 import androidx.recyclerview.widget.DiffUtil
 import com.example.cmd.domain.entities.MyFileDomain
+import javax.inject.Inject
 
-class MyFileAdapterDiffCallback: DiffUtil.ItemCallback<MyFileDomain>() {
+class MyFileAdapterDiffCallback @Inject constructor(): DiffUtil.ItemCallback<MyFileDomain>() {
   override fun areItemsTheSame(oldItem: MyFileDomain, newItem: MyFileDomain): Boolean =
     oldItem.path == newItem.path
 

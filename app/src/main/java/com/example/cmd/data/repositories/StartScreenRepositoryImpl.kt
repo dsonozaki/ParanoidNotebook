@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
+
 class StartScreenRepositoryImpl @Inject constructor(
   @ApplicationContext private val context: Context
 ) : StartScreenRepository {

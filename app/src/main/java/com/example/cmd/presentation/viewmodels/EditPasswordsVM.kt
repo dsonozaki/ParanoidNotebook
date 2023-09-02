@@ -1,25 +1,51 @@
 package com.example.cmd.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.cmd.domain.entities.Passwords
+import com.example.cmd.domain.usecases.passwords.GetPasswordsFlowUseCase
+import com.example.cmd.domain.usecases.passwords.SetMainPasswordUseCase
+import com.example.cmd.domain.usecases.passwords.SetSettingsPasswordUseCase
 import com.example.cmd.presentation.states.PasswordsState
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combineTransform
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
-class EditPasswordsVM @AssistedInject constructor(
-  @Assisted private val passwords: Passwords,
-  private val _passwordsStateFlow: MutableStateFlow<PasswordsState>
+class EditPasswordsVM @Inject constructor(
+  private val passwordsUpdateFlow: MutableStateFlow<Passwords>,
+  private val getPasswordsFlowUseCase: GetPasswordsFlowUseCase,
+  private val setMainPasswordUseCase: SetMainPasswordUseCase,
+  private val setSettingsPasswordUseCase: SetSettingsPasswordUseCase,
+  private val goToMainScreenChannel: Channel<Unit>
 ) : ViewModel() {
 
-  val passwordsStateFlow = _passwordsStateFlow.asStateFlow()
+  val goToMainScreenFlow = goToMainScreenChannel.receiveAsFlow()
 
-  init {
-    if (!passwords.isEmpty()) {
-      _passwordsStateFlow.value = PasswordsState.PasswordsCorrect()
+  val passwordsStateFlow = getPasswordsFlowUseCase().combineTransform(passwordsUpdateFlow) {
+    passwordsSaved: Passwords, passwordsEntered : Passwords ->
+    if (checkPasswords(passwordsEntered, passwordsSaved)) {
+      emit(PasswordsState.PasswordsCorrect)
+    } else {
+      emit(PasswordsState.PasswordsIncorrect)
+    }
+  }.stateIn(viewModelScope, SharingStarted.Lazily, PasswordsState.PasswordsIncorrect)
+
+  fun updatePasswords(mainPassword: String,settingsPassword: String) {
+    viewModelScope.launch {
+      if (mainPassword.isNotEmpty()) {
+        setMainPasswordUseCase(mainPassword)
+      }
+      if (settingsPassword.isNotEmpty()) {
+        setSettingsPasswordUseCase(settingsPassword)
+      }
+      goToMainScreenChannel.send(Unit)
     }
   }
 
@@ -29,12 +55,12 @@ class EditPasswordsVM @AssistedInject constructor(
     )
   }
 
-  private fun checkPasswords(mainPassword: String, settingsPassword: String): Boolean {
-    val currentMainPassword = mainPassword.ifEmpty {
-      passwords.mainPass
+  private fun checkPasswords(enteredPasswords: Passwords, savedPasswords: Passwords): Boolean {
+    val currentMainPassword = enteredPasswords.mainPass.ifEmpty {
+      savedPasswords.mainPass
     }
-    val currentSettingsPassword = settingsPassword.ifEmpty {
-      passwords.settingsPass
+    val currentSettingsPassword = enteredPasswords.settingsPass.ifEmpty {
+      savedPasswords.settingsPass
     }
     return currentMainPassword.dontContainEachOther(currentSettingsPassword) &&
       currentMainPassword.isNotEmpty() &&
@@ -42,10 +68,8 @@ class EditPasswordsVM @AssistedInject constructor(
   }
 
   fun passwordsChanged(mainPassword: String, settingsPassword: String) {
-    _passwordsStateFlow.value = if (checkPasswords(mainPassword, settingsPassword)) {
-      PasswordsState.PasswordsCorrect(mainPassword, settingsPassword)
-    } else {
-      PasswordsState.PasswordsIncorrect(mainPassword, settingsPassword)
+    viewModelScope.launch {
+      passwordsUpdateFlow.emit(Passwords(settingsPassword,mainPassword))
     }
   }
 }

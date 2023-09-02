@@ -6,10 +6,11 @@ import javax.inject.Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 annotation class LogsDirectory
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class MainScreenNotificationChannel
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 annotation class NewLogFileChannel
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class IOCoroutineScope

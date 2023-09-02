@@ -3,6 +3,7 @@ package com.example.cmd.data.services
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
@@ -15,6 +16,7 @@ import com.example.cmd.domain.usecases.autodeletion.data.GetAutoDeletionDataUseC
 import com.example.cmd.domain.usecases.autodeletion.status.CompleteDeletionUseCase
 import com.example.cmd.domain.usecases.autodeletion.status.DoNotStartDeletionUseCase
 import com.example.cmd.domain.usecases.autodeletion.status.GetDeletionStatusUseCase
+import com.example.cmd.domain.usecases.autodeletion.status.StartDeletionUseCase
 import com.example.cmd.domain.usecases.database.DeleteMyFileUseCase
 import com.example.cmd.domain.usecases.database.GetFilesDbUseCase
 import com.example.cmd.domain.usecases.logs.WriteToLogsEncryptedUseCase
@@ -45,7 +47,7 @@ class AutoShredder @AssistedInject constructor(
   private val getDeletionStatusUseCase: GetDeletionStatusUseCase,
   private val writeToLogsEncryptedUseCase: WriteToLogsEncryptedUseCase,
   private val deleteMyFileUseCase: DeleteMyFileUseCase,
-  private val startDeletionUseCase: DoNotStartDeletionUseCase,
+  private val startDeletionUseCase: StartDeletionUseCase,
   private val doNotStartDeletionUseCase: DoNotStartDeletionUseCase,
   private val completeDeletionUseCase: CompleteDeletionUseCase
 ) :
@@ -76,6 +78,7 @@ class AutoShredder @AssistedInject constructor(
       }
       joinAll(job1, job2, job3, job4)
       writeToLogsUseCase(context.getString(R.string.deletion_started))
+      Log.w("removing", "files_removing_started")
       removeAll()
     }
     return Result.success()
@@ -166,6 +169,7 @@ class AutoShredder @AssistedInject constructor(
       val id = if (isDirectory) {
         R.string.deletion_folder
       } else {
+        Log.w("removing", "its file")
         R.string.deletion_file
       }
       writeToLogsEncryptedUseCase(
@@ -174,10 +178,13 @@ class AutoShredder @AssistedInject constructor(
       val df = try {
         file.toDocumentFile() ?: throw RuntimeException()
       } catch (e: Exception) {
+        Log.w("removing", "error")
         writeAboutDeletionError(isDirectory, name, context.getString(R.string.access_error))
         return@launch
       }
+      Log.w("removing", "finalFunction")
       val result: Pair<Int, Int> = deleteFile(df, file.path, isDirectory)
+      Log.w("removing", "processResults")
       processDeletionResults(result, isDirectory, file)
     }
   }
@@ -185,15 +192,21 @@ class AutoShredder @AssistedInject constructor(
 
   private suspend fun removeAll() {
     coroutineScope {
-      getDeletionStatusUseCase().collect {
-        if (it.deletionPreventionTimestamp > System.currentTimeMillis() - SystemClock.elapsedRealtime())
-          writeToLogsUseCase(context.getString(R.string.deletion_declined))
-        throw CancellationException()
+        launch {
+          getDeletionStatusUseCase().collect {
+            if (it.deletionPreventionTimestamp > System.currentTimeMillis() - SystemClock.elapsedRealtime()) {
+              Log.w("removing", "cancelled")
+              writeToLogsUseCase(context.getString(R.string.deletion_declined))
+              throw CancellationException()
+            }
+          }
       }
       startDeletionUseCase()
+      Log.w("removing", "jobs started")
       //Файлы сортируются по приоритетам, файлы с одинаковыми приоритетами удаляются параллельно
       filesList.sortedByDescending { it.priority }.groupBy { it.priority }.forEach { it1 ->
         val jobs: List<Job> = it1.value.map {
+          Log.w("removing", "job ${it.path}")
           removeFile(this, it)
         }
         jobs.joinAll()
@@ -226,7 +239,8 @@ class AutoShredder @AssistedInject constructor(
         try {
           df.delete()
         } catch (e: Exception) {
-          writeAboutDeletionError(true,path,
+          writeAboutDeletionError(
+            true, path,
             e.localizedMessage ?: "Unknown"
           )
         }
@@ -234,9 +248,11 @@ class AutoShredder @AssistedInject constructor(
       return Pair(success, all)
     }
     try {
+      Log.w("removing", "df.delete()")
       df.delete()
     } catch (e: Exception) {
-      writeAboutDeletionError(false,path,
+      writeAboutDeletionError(
+        false, path,
         e.localizedMessage ?: "Unknown"
       )
       return Pair(0, 1)

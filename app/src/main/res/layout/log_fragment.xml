@@ -3,29 +3,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <data>
+  <data>
 
-        <variable
-            name="viewmodel"
-            type="com.example.cmd.presentation.viewmodels.LogsVM" />
-
-    </data>
+    <variable
+      name="viewmodel"
+      type="com.example.cmd.presentation.viewmodels.LogsVM" />
+  </data>
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ProgressBar
-            android:id="@+id/progressBar3"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
-            android:visibility="@{viewmodel.visibility}"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="@+id/scrollView3"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/toolbar2"
-            app:layout_constraintTop_toBottomOf="@+id/toolbar2" />
+      <ProgressBar
+        android:id="@+id/progressBar3"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@+id/scrollView3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:progressBarFromLogsState="@{viewmodel.logsState}" />
 
 
       <ScrollView
@@ -37,7 +36,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:scrollOnNewItem="@{viewmodel.logsState}">
 
         <LinearLayout
           android:layout_width="match_parent"
@@ -55,10 +55,10 @@
             android:paddingTop="4dp"
             android:paddingEnd="0dp"
             android:paddingBottom="0dp"
-            android:text="@{viewmodel.text}"
             android:textColor="@color/whitetext"
             android:textIsSelectable="true"
-            android:textSize="20sp" />
+            android:textSize="20sp"
+            app:logsTextFromState="@{viewmodel.logsState}"/>
 
 
         </LinearLayout>

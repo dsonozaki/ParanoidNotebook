@@ -7,6 +7,8 @@ import com.example.cmd.data.repositories.FilesRepositoryImpl
 import com.example.cmd.data.repositories.LogsDataRepositoryImpl
 import com.example.cmd.data.repositories.LogsRepositoryImpl
 import com.example.cmd.data.repositories.LogsTextRepositoryImpl
+import com.example.cmd.data.repositories.PasswordsRepositoryImpl
+import com.example.cmd.data.repositories.StartScreenRepositoryImpl
 import com.example.cmd.domain.entities.FilesSortOrder
 import com.example.cmd.domain.entities.LogEntity
 import com.example.cmd.domain.repositories.AutoDeletionDataRepository
@@ -15,6 +17,8 @@ import com.example.cmd.domain.repositories.FilesRepository
 import com.example.cmd.domain.repositories.LogsDataRepository
 import com.example.cmd.domain.repositories.LogsRepository
 import com.example.cmd.domain.repositories.LogsTextRepository
+import com.example.cmd.domain.repositories.PasswordsRepository
+import com.example.cmd.domain.repositories.StartScreenRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -33,8 +37,10 @@ import javax.inject.Singleton
 abstract class  SingletonRepositoriesModule {
   @Binds
   @Singleton
-  abstract fun bindLogsRepository(logsTextRepositoryImpl: LogsTextRepositoryImpl): LogsTextRepository
-
+  abstract fun bindLogsTextRepository(logsTextRepositoryImpl: LogsTextRepositoryImpl): LogsTextRepository
+  @Binds
+  @Singleton
+  abstract fun bindStartScreenRepository(startScreenRepositoryImpl: StartScreenRepositoryImpl): StartScreenRepository
   @Binds
   @Singleton
   abstract fun bindLogsDataRepository(logsDataRepositoryImpl: LogsDataRepositoryImpl): LogsDataRepository
@@ -54,10 +60,13 @@ abstract class  SingletonRepositoriesModule {
   @Binds
   @Singleton
   abstract fun bindLogsRepository(logsRepositoryImpl: LogsRepositoryImpl): LogsRepository
+  @Binds
+  @Singleton
+  abstract fun bindPasswordsRepository(passwordsRepositoryImpl: PasswordsRepositoryImpl): PasswordsRepository
   companion object {
     @Provides
-    @Singleton
-    fun provideCoroutineScope(): CoroutineScope {
+    @IOCoroutineScope
+    fun provideIOCoroutineScope(): CoroutineScope {
       return CoroutineScope(Dispatchers.IO)
     }
 

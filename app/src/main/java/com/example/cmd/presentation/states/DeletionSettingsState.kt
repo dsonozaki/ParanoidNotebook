@@ -1,10 +1,11 @@
 package com.example.cmd.presentation.states
 
-import com.example.cmd.domain.entities.AutoDeletionData
-import com.example.cmd.domain.entities.MyFileDomain
-
 
 sealed class DeletionSettingsState {
   object Loading : DeletionSettingsState()
-  class ViewData(val autoDeletionData: AutoDeletionData, val data: List<MyFileDomain>)
+  class ViewData(val timeout: Int, val status: DeletionActivationStatus) : DeletionSettingsState()
+}
+
+enum class DeletionActivationStatus {
+  ACTIVE, INACTIVE_AND_READY, INACTIVE_AND_NOT_NOTIFIED_XIAOMI, INACTIVE_AND_WITHOUT_TIMEOUT
 }

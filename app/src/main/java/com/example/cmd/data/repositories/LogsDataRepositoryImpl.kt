@@ -7,16 +7,14 @@ import com.example.cmd.domain.entities.LogsData
 import com.example.cmd.domain.repositories.LogsDataRepository
 import com.example.cmd.getEpochDays
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.collections.immutable.mutate
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 
 class LogsDataRepositoryImpl @Inject constructor(
-  @ApplicationContext private val context: Context,
-  coroutineScope: CoroutineScope,
+  @ApplicationContext private val context: Context
 ) :
   LogsDataRepository {
 
@@ -32,21 +30,21 @@ class LogsDataRepositoryImpl @Inject constructor(
       )
         return@updateData it
       val removePeriod = it.logsAutoRemovePeriod
-      val logDates = it.logDates.mutate { list ->
-        list.forEach { localDateTime ->
+      val logDates : MutableList<String> = mutableListOf()
+      it.logDates.forEach { localDateTime ->
           if (checkOldDays(localDateTime, removePeriod, currentDay)) {
-            list.remove(localDateTime)
             daysToClear.add(localDateTime)
+          } else {
+            logDates.add(localDateTime)
           }
-        }
       }
-      it.copy(logDates = logDates, lastDayOfAutoDeletion = currentDay)
+      it.copy(logDates = logDates.toList(), lastDayOfAutoDeletion = currentDay)
     }
     return daysToClear
   }
 
-  private fun checkOldDays(localDateTime: String, removePeriod: Int, currentDay: Long): Boolean {
-    return currentDay - LocalDateTime.parse(localDateTime).getEpochDays() > removePeriod
+  private fun checkOldDays(localDate: String, removePeriod: Int, currentDay: Long): Boolean {
+    return currentDay - LocalDate.parse(localDate).toEpochDays() > removePeriod
   }
 
   override suspend fun editLogsAutoRemoveTimeout(timeout: Int) {
@@ -57,19 +55,17 @@ class LogsDataRepositoryImpl @Inject constructor(
 
   override suspend fun addDayToLogs(day: String) {
     context.logsDataStore.updateData {
-      val logDates = it.logDates.mutate { localDateTimes ->
-        localDateTimes.add(day)
-      }
-      it.copy(logDates = logDates)
+      val logDates : MutableList<String> = it.logDates.toMutableList()
+      logDates.add(day)
+      it.copy(logDates = logDates.toList())
     }
   }
 
   override suspend fun removeDayFromLogs(day: String) {
     context.logsDataStore.updateData {
-      val logDates = it.logDates.mutate { localDateTimes ->
-        localDateTimes.remove(day)
-      }
-      it.copy(logDates = logDates)
+      val logDates : MutableList<String> = it.logDates.toMutableList()
+      logDates.remove(day)
+      it.copy(logDates = logDates.toList())
     }
   }
 

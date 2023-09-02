@@ -81,9 +81,9 @@ class FilesRepositoryImpl @Inject constructor(
 
   override suspend fun insertMyFile(uri: Uri, isDirectory: Boolean) {
     val df = if(isDirectory) {
-      DocumentFile.fromSingleUri(context,uri)
-    } else {
       DocumentFile.fromTreeUri(context,uri)
+    } else {
+      DocumentFile.fromSingleUri(context,uri)
     }?: throw RuntimeException("Can't get file or directory for uri $uri")
     val path = df.getAbsolutePath(context)
     val size = getFileSize(path)

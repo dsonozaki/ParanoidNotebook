@@ -3,6 +3,13 @@
   xmlns:app="http://schemas.android.com/apk/res-auto"
   android:id="@+id/mainfragment">
 
+  <data>
+
+    <variable
+      name="viewmodel"
+      type="com.example.cmd.presentation.viewmodels.MainVM" />
+  </data>
+
   <androidx.constraintlayout.widget.ConstraintLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -16,7 +23,8 @@
       app:layout_constraintBottom_toBottomOf="@+id/scrollView2"
       app:layout_constraintEnd_toEndOf="@+id/scrollView2"
       app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toTopOf="parent" />
+      app:layout_constraintTop_toTopOf="parent"
+      app:progressBarFromStartState = "@{viewmodel.currentState}"/>
 
     <ScrollView
       android:id="@+id/scrollView2"
@@ -46,7 +54,8 @@
           android:textColorHint="@color/lightgrey"
           app:boxStrokeColor="@null"
           app:hintEnabled="false"
-          app:layout_constraintBaseline_toTopOf="@+id/guideline19">
+          app:layout_constraintBaseline_toTopOf="@+id/guideline19"
+          app:textInputLayoutFromStartState = "@{viewmodel.currentState}">
 
           <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/notebook"
@@ -54,7 +63,6 @@
             android:layout_height="wrap_content"
             android:ellipsize="start"
             android:gravity="top"
-            android:hint="@string/entertext"
             android:paddingStart="0dp"
             android:paddingTop="4dp"
             android:background="#00000000"
@@ -63,7 +71,8 @@
             android:textColor="@color/whitetext"
             android:textColorHint="@color/lightgrey"
             android:textCursorDrawable="@drawable/cursor_color"
-            android:textSize="20sp" />
+            android:textSize="20sp"
+            app:textInputFromStartState = "@{viewmodel.currentState}"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

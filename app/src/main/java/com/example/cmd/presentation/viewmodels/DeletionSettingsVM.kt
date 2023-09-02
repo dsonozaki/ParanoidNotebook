@@ -3,13 +3,11 @@ package com.example.cmd.presentation.viewmodels
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cmd.domain.entities.AutoDeletionData
 import com.example.cmd.domain.entities.FilesSortOrder
-import com.example.cmd.domain.entities.MyFileDomain
 import com.example.cmd.domain.usecases.autodeletion.data.GetAutoDeletionDataUseCase
 import com.example.cmd.domain.usecases.autodeletion.data.PutAutoDeletionTimeOutUseCase
 import com.example.cmd.domain.usecases.autodeletion.data.SwitchAutoDeletionStatusUseCase
-import com.example.cmd.domain.usecases.autodeletion.data.XiomiNotificationSentUseCase
+import com.example.cmd.domain.usecases.autodeletion.data.XiaomiNotificationSentUseCase
 import com.example.cmd.domain.usecases.database.ChangeFilePriorityUseCase
 import com.example.cmd.domain.usecases.database.ChangeSortOrderUseCase
 import com.example.cmd.domain.usecases.database.ClearDbUseCase
@@ -19,7 +17,7 @@ import com.example.cmd.domain.usecases.database.InsertMyFileUseCase
 import com.example.cmd.presentation.states.DeletionSettingsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combineTransform
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,7 +28,7 @@ class DeletionSettingsVM @Inject constructor(
   getFilesDbUseCase: GetFilesDbUseCase,
   getAutoDeletionDataUseCase: GetAutoDeletionDataUseCase,
   private val deleteMyFileUseCase: DeleteMyFileUseCase,
-  private val xiomiNotificationSentUseCase: XiomiNotificationSentUseCase,
+  private val xiaomiNotificationSentUseCase: XiaomiNotificationSentUseCase,
   private val switchAutoDeletionStatusUseCase: SwitchAutoDeletionStatusUseCase,
   private val insertMyFileUseCase: InsertMyFileUseCase,
   private val changeFilePriorityUseCase: ChangeFilePriorityUseCase,
@@ -39,11 +37,17 @@ class DeletionSettingsVM @Inject constructor(
   private val clearDbUseCase: ClearDbUseCase,
 ) : ViewModel() {
 
-  val deletionSettingsState = getFilesDbUseCase().combineTransform(getAutoDeletionDataUseCase()) {
-      files: List<MyFileDomain>, autoDeletionData: AutoDeletionData -> emit(DeletionSettingsState.ViewData(autoDeletionData,files))
+  val autoDeletionDataState = getAutoDeletionDataUseCase().map {
+    DeletionSettingsState.ViewData(it.timeOut,it.toDeletionActivationStatus())
   }.stateIn(viewModelScope,
     SharingStarted.Lazily,
     DeletionSettingsState.Loading
+  )
+
+  val filesState = getFilesDbUseCase().stateIn(
+    viewModelScope,
+    SharingStarted.Lazily,
+    listOf()
   )
 
   fun removeFileFromDb(uri: Uri) {
@@ -54,7 +58,7 @@ class DeletionSettingsVM @Inject constructor(
 
   fun xiaomiNotificationSent() {
     viewModelScope.launch {
-      xiomiNotificationSentUseCase()
+      xiaomiNotificationSentUseCase()
     }
   }
 

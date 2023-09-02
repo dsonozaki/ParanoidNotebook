@@ -1,6 +1,7 @@
 package com.example.cmd.presentation.utils
 
 import android.content.Context
+import android.util.Log
 
 sealed class UIText {
   data class UsualString(val value: String) : UIText()
@@ -8,9 +9,9 @@ sealed class UIText {
 
   class ColoredHTMLText(val text: String, vararg val colors: Int) : UIText()
 
-  private fun String.colorize(colors: List<String>): String  = buildString {
-    this.lines().forEach {
-     this.append(this@colorize.format(colors))
+  private fun String.colorize(vararg colors: String): String  = buildString {
+    this@colorize.lines().forEach {
+     this@buildString.append(it.format(*colors))
     }
   }
 
@@ -21,8 +22,10 @@ sealed class UIText {
       is ColoredHTMLText -> {
         val colors = this.colors.map {
           context?.resources?.getString(0+it) ?: throw RuntimeException("context is not provided")
-        }
-        return this.text.colorize(colors)
+        }.toTypedArray()
+        Log.w("colors",colors.joinToString())
+        Log.w("currenttext",this.text)
+        return this.text.colorize(*colors)
       }
     }
   }

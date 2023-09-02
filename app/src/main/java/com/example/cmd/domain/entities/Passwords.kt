@@ -13,7 +13,7 @@ data class Passwords(val settingsPass: String ="",val mainPass:String="") {
   }
 
   fun isEmpty(): Boolean {
-    return settingsPass.isEmpty() and mainPass.isEmpty()
+    return settingsPass.isEmpty() or mainPass.isEmpty()
   }
 }
 

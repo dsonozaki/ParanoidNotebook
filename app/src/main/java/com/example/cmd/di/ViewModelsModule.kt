@@ -1,38 +1,32 @@
 package com.example.cmd.di
 
-import com.example.cmd.presentation.utils.UIText
-import com.example.cmd.presentation.events.LogScreenEvents
+import com.example.cmd.domain.entities.Passwords
+import com.example.cmd.presentation.actions.StartScreenActions
 import com.example.cmd.presentation.states.LogsScreenState
-import com.example.cmd.presentation.states.PasswordsState
 import com.example.cmd.presentation.states.StartScreenState
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import javax.inject.Singleton
 
-@InstallIn(ViewModelsModule::class)
+@InstallIn(ViewModelComponent::class)
 @Module
 class ViewModelsModule {
   @Provides
-  @Singleton
   fun provideStartScreenStateFlow(): MutableStateFlow<StartScreenState> = MutableStateFlow(StartScreenState.Loading)
 
   @Provides
-  @MainScreenNotificationChannel
-  @Singleton
-  fun provideMainScreenNotificationChannel(): Channel<UIText> = Channel()
+  fun provideMainScreenActionChannel(): Channel<StartScreenActions> = Channel()
 
   @Provides
-  @Singleton
-  fun providePasswordsStateFlow() : MutableStateFlow<PasswordsState> = MutableStateFlow(PasswordsState.PasswordsIncorrect())
+  fun provideGoToMainScreenChannel() : Channel<Unit> = Channel()
 
   @Provides
-  @Singleton
-  fun provideLogsStateFlow(): MutableStateFlow<LogsScreenState> = MutableStateFlow(LogsScreenState.Loading())
+  fun provideLogsStateFlow(): MutableSharedFlow<LogsScreenState> = MutableSharedFlow()
 
   @Provides
-  @Singleton
-  fun provideLogScreenEventsChannel() : Channel<LogScreenEvents> = Channel()
+  fun providePasswordsStateFlow(): MutableStateFlow<Passwords> = MutableStateFlow(Passwords())
 }

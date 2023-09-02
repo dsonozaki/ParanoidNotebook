@@ -3,12 +3,11 @@ package com.example.cmd.presentation
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
-import androidx.room.Room
 import com.example.cmd.R
-import com.example.cmd.data.db.FileDataBase
 import com.example.cmd.databinding.ActivityMainBinding
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
 
@@ -18,11 +17,6 @@ class MainActivity : AppCompatActivity() {
       DataBindingUtil.setContentView(this, R.layout.activity_main)
     setSupportActionBar(mainBinding.toolbar2)
     setContentView(mainBinding.root)
-    Room.databaseBuilder(
-      applicationContext,
-      FileDataBase::class.java,
-      "lox"
-    ).build()
   }
 
 
