@@ -4,7 +4,6 @@ plugins {
   id 'kotlin-kapt'
   id 'org.jetbrains.kotlin.plugin.serialization'
   id 'com.google.dagger.hilt.android'
-
 }
 
 android {
@@ -32,12 +31,12 @@ android {
     enabled true
   }
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
     coreLibraryDesugaringEnabled true
   }
   kotlinOptions {
-    jvmTarget = '1.8'
+    jvmTarget = '17'
   }
   buildFeatures {
     viewBinding true
@@ -49,10 +48,9 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
 
 dependencies {
-  implementation 'androidx.core:core-ktx:1.10.1'
-  ext.navigation_version = "2.7.1"
-  ext.room_version = "2.6.0-beta01"
-  ext.lifecycle_version = "2.5.1"
+  ext.navigation_version = "2.7.2"
+  ext.room_version = "2.6.0-rc01"
+  ext.lifecycle_version = "2.6.2"
   ext.runtime_ktx_version = "2.8.1"
   ext.annotation_version = "1.5.0"
   ext.first_version = "1.0.0"
@@ -80,6 +78,7 @@ dependencies {
   ext.material_version = "1.9.0"
   ext.desugaring_version = "2.0.3"
   ext.hilt_worker_version = "1.0.0"
+  implementation 'androidx.core:core-ktx:1.12.0'
   implementation "com.google.dagger:dagger:$dagger_version"
   kapt "com.google.dagger:dagger-compiler:$dagger_version"
   implementation "androidx.datastore:datastore-preferences:$datastore_version"
@@ -128,6 +127,7 @@ dependencies {
   implementation "com.google.dagger:hilt-android:$hilt_version"
   kapt "com.google.dagger:hilt-compiler:$hilt_version"
   coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugaring_version"
+  debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.12'
 }
 
 kapt {

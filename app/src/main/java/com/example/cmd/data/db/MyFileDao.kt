@@ -5,10 +5,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MyFileDao {
-  @Query("SELECT * FROM MyFileDbModel ORDER BY path ASC")
+  @Query("SELECT * FROM MyFileDbModel ORDER BY name ASC")
   fun getDataSortedByPathAsc(): Flow<List<MyFileDbModel>>
 
-  @Query("SELECT * FROM MyFileDbModel ORDER BY path DESC")
+  @Query("SELECT * FROM MyFileDbModel ORDER BY name DESC")
   fun getDataSortedByPathDesc(): Flow<List<MyFileDbModel>>
 
   @Query("SELECT * FROM MyFileDbModel ORDER BY size ASC")
@@ -23,7 +23,7 @@ interface MyFileDao {
   @Query("SELECT * FROM MyFileDbModel ORDER BY priority DESC")
   fun getDataSortedByPriorityDesc(): Flow<List<MyFileDbModel>>
 
-  @Upsert
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun upsert(file: MyFileDbModel)
 
   @Query("UPDATE MyFileDbModel SET priority=:priority WHERE uri=:uri")

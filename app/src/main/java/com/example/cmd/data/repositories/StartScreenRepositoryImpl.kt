@@ -7,9 +7,7 @@ import com.example.cmd.domain.entities.AppInitStatus
 import com.example.cmd.domain.entities.StartScreenData
 import com.example.cmd.domain.repositories.StartScreenRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -24,27 +22,21 @@ class StartScreenRepositoryImpl @Inject constructor(
 
 
   override suspend fun saveText(text: String) {
-    withContext(IO) {
       context.startScreenDataStore.updateData {
         it.copy(text = text)
-      }
     }
   }
 
   override suspend fun showHint() {
-    withContext(IO) {
       context.startScreenDataStore.updateData {
         it.copy(appInitStatus = AppInitStatus.SHOW_HINT)
-      }
     }
   }
 
   override suspend fun finishInitialisation() {
-    withContext(IO) {
       context.startScreenDataStore.updateData {
         it.copy(appInitStatus = AppInitStatus.INITIALISED)
       }
-    }
   }
 
   companion object {

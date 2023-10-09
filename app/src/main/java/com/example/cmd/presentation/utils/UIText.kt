@@ -21,10 +21,10 @@ sealed class UIText {
       is StringResource -> context?.getString(id, *arguments) ?: throw RuntimeException("context is not provided")
       is ColoredHTMLText -> {
         val colors = this.colors.map {
-          context?.resources?.getString(0+it) ?: throw RuntimeException("context is not provided")
+          context?.resources?.getString(it)?.removeRange(1..2) ?: throw RuntimeException("context is not provided")
         }.toTypedArray()
         Log.w("colors",colors.joinToString())
-        Log.w("currenttext",this.text)
+        Log.w("currenttext",this.text.colorize(*colors))
         return this.text.colorize(*colors)
       }
     }

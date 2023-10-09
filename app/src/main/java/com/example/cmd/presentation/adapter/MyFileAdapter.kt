@@ -40,9 +40,9 @@ class MyFileAdapter @Inject constructor(
     val file = getItem(position)
     with(holder.binding) {
       imageView2.setImage(file.fileType, file.uri)
-      path.text = file.path
+      path.text = file.name
       priority.text = root.context.getString(R.string.priority, file.priority)
-      size.text = root.context.getString(R.string.size,file.sizeFormated)
+      size.text = root.context.getString(R.string.size,file.sizeFormatted)
       delete.setOnClickListener {
         onDeleteItemClickListener?.invoke(file.uri)
       }

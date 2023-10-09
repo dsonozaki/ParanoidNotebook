@@ -12,4 +12,5 @@ interface FilesRepository {
   suspend fun changeFilePriority(priority: Int, uri: Uri)
   suspend fun insertMyFile(uri: Uri, isDirectory: Boolean)
   suspend fun deleteMyFile(uri: Uri)
+
 }

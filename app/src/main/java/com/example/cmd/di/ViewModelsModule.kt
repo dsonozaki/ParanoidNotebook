@@ -1,8 +1,11 @@
 package com.example.cmd.di
 
 import com.example.cmd.domain.entities.Passwords
+import com.example.cmd.presentation.actions.DeletionSettingsAction
+import com.example.cmd.presentation.actions.LogsActions
 import com.example.cmd.presentation.actions.StartScreenActions
-import com.example.cmd.presentation.states.LogsScreenState
+import com.example.cmd.presentation.states.DeletionDataState
+import com.example.cmd.presentation.states.LogsDataState
 import com.example.cmd.presentation.states.StartScreenState
 import dagger.Module
 import dagger.Provides
@@ -19,14 +22,23 @@ class ViewModelsModule {
   fun provideStartScreenStateFlow(): MutableStateFlow<StartScreenState> = MutableStateFlow(StartScreenState.Loading)
 
   @Provides
+  fun provideDeletionSettingsActionChannel(): Channel<DeletionSettingsAction> = Channel()
+
+  @Provides
   fun provideMainScreenActionChannel(): Channel<StartScreenActions> = Channel()
 
   @Provides
   fun provideGoToMainScreenChannel() : Channel<Unit> = Channel()
 
   @Provides
-  fun provideLogsStateFlow(): MutableSharedFlow<LogsScreenState> = MutableSharedFlow()
+  fun provideLogsStateFlow(): MutableSharedFlow<LogsDataState> = MutableSharedFlow()
 
   @Provides
   fun providePasswordsStateFlow(): MutableStateFlow<Passwords> = MutableStateFlow(Passwords())
+
+  @Provides
+  fun provideDeletionSettingsStateFlow(): MutableStateFlow<DeletionDataState> = MutableStateFlow(DeletionDataState.Loading)
+
+  @Provides
+  fun provideLogsActionChannel(): Channel<LogsActions> = Channel()
 }

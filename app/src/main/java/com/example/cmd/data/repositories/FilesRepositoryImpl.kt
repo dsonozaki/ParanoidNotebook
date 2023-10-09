@@ -2,6 +2,7 @@ package com.example.cmd.data.repositories
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.file.getAbsolutePath
 import com.anggrayudi.storage.file.mimeType
@@ -31,14 +32,15 @@ class FilesRepositoryImpl @Inject constructor(
 
   @OptIn(ExperimentalCoroutinesApi::class)
   override val filesDb : Flow<List<MyFileDomain>> = sortOrderFlow.flatMapLatest {
-    when (it) {
-      FilesSortOrder.NAME_ASC -> myFileDao.getDataSortedByPathAsc().map { mapper.mapDbListToDtList(it) }
-      FilesSortOrder.NAME_DESC -> myFileDao.getDataSortedByPathDesc().map {mapper.mapDbListToDtList(it) }
-      FilesSortOrder.SIZE_ASC -> myFileDao.getDataSortedBySizeAsc().map { mapper.mapDbListToDtList(it) }
-      FilesSortOrder.SIZE_DESC -> myFileDao.getDataSortedBySizeDesc().map { mapper.mapDbListToDtList(it) }
-      FilesSortOrder.PRIORITY_ASC -> myFileDao.getDataSortedByPriorityAsc().map { mapper.mapDbListToDtList(it) }
-      FilesSortOrder.PRIORITY_DESC -> myFileDao.getDataSortedByPriorityDesc().map { mapper.mapDbListToDtList(it) }
+    val filesFlow = when (it) {
+      FilesSortOrder.NAME_ASC -> myFileDao.getDataSortedByPathAsc()
+      FilesSortOrder.NAME_DESC -> myFileDao.getDataSortedByPathDesc()
+      FilesSortOrder.SIZE_ASC -> myFileDao.getDataSortedBySizeAsc()
+      FilesSortOrder.SIZE_DESC -> myFileDao.getDataSortedBySizeDesc()
+      FilesSortOrder.PRIORITY_ASC -> myFileDao.getDataSortedByPriorityAsc()
+      FilesSortOrder.PRIORITY_DESC -> myFileDao.getDataSortedByPriorityDesc()
     }
+    filesFlow.map { mapper.mapDbListToDtList(it) }
   }
 
   override suspend fun clearDb() {
@@ -55,6 +57,7 @@ class FilesRepositoryImpl @Inject constructor(
 
   //Получение размера файла или папки
   private fun getFileSize(path: String): Long {
+    Log.w("filepath",path)
     val process = Runtime.getRuntime().exec(arrayOf("du", "-s", path))
     val bufferedReader = BufferedReader(InputStreamReader(process.inputStream))
     bufferedReader.use {
@@ -62,6 +65,7 @@ class FilesRepositoryImpl @Inject constructor(
       val result = try {
         line.split("\t")[0].toLong()
       } catch (e: Exception) {
+        Log.w("Exceptionsize",e)
         0
       }
       return result
@@ -70,7 +74,7 @@ class FilesRepositoryImpl @Inject constructor(
 
   private fun Long.convertToHumanFormat(): String {
     var number = this
-    val names = listOf("KB", "MB", "GB", "TB")
+    val names = listOf("B","KB", "MB", "GB", "TB")
     var i = 0
     while (number > 1023) {
       number /= 1024
@@ -85,8 +89,11 @@ class FilesRepositoryImpl @Inject constructor(
     } else {
       DocumentFile.fromSingleUri(context,uri)
     }?: throw RuntimeException("Can't get file or directory for uri $uri")
-    val path = df.getAbsolutePath(context)
-    val size = getFileSize(path)
+    val size = if (isDirectory) {
+      getFileSize(df.getAbsolutePath(context)) * 1024
+    } else {
+      df.length()
+    }
     val fileType = if (isDirectory) {
       FileType.DIRECTORY
     } else {
@@ -96,8 +103,8 @@ class FilesRepositoryImpl @Inject constructor(
         FileType.USUAL_FILE
       }
     }
-      myFileDao.upsert(MyFileDbModel(uri = uri.toString(), path = path,size = size, priority = 0, fileType = fileType, sizeFormated = size.convertToHumanFormat()))
-  } //?
+      myFileDao.upsert(MyFileDbModel(uri = uri.toString(), name = df.name?:"No name",size = size, priority = 0, fileType = fileType, sizeFormatted = size.convertToHumanFormat()))
+  }
 
   override suspend fun deleteMyFile(uri: Uri) {
     myFileDao.delete(uri.toString())

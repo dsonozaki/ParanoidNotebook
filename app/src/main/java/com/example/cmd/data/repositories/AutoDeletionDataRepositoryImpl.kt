@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class AutoDeletionDataRepositoryImpl @Inject constructor(
-  @ApplicationContext private val context: Context
+  @ApplicationContext private val context: Context,
 ) :
   AutoDeletionDataRepository {
 

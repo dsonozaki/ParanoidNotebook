@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 class MyFileAdapterDiffCallback @Inject constructor(): DiffUtil.ItemCallback<MyFileDomain>() {
   override fun areItemsTheSame(oldItem: MyFileDomain, newItem: MyFileDomain): Boolean =
-    oldItem.path == newItem.path
+    oldItem.name == newItem.name
 
 
   override fun areContentsTheSame(oldItem: MyFileDomain, newItem: MyFileDomain): Boolean =

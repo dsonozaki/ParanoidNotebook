@@ -35,7 +35,7 @@ class EditPasswordsVM @Inject constructor(
     } else {
       emit(PasswordsState.PasswordsIncorrect)
     }
-  }.stateIn(viewModelScope, SharingStarted.Lazily, PasswordsState.PasswordsIncorrect)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PasswordsState.PasswordsIncorrect)
 
   fun updatePasswords(mainPassword: String,settingsPassword: String) {
     viewModelScope.launch {

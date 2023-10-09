@@ -8,8 +8,6 @@ interface DeletionStatusRepository {
 
   suspend fun startDeletion()
 
-  suspend fun doNotStartDeletion()
-
   suspend fun completeDeletion()
 
   suspend fun preventDeletion()

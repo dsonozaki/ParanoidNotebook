@@ -1,9 +1,8 @@
 package com.example.cmd.presentation.states
 
-
 sealed class DeletionSettingsState {
-  object Loading : DeletionSettingsState()
-  class ViewData(val timeout: Int, val status: DeletionActivationStatus) : DeletionSettingsState()
+  data object Loading: DeletionSettingsState()
+  class ViewSettings(val timeout: Int, val status: DeletionActivationStatus): DeletionSettingsState()
 }
 
 enum class DeletionActivationStatus {

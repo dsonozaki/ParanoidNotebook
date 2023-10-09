@@ -1,7 +1,6 @@
 package com.example.cmd.presentation.fragments
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -13,22 +12,21 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.cmd.R
 import com.example.cmd.databinding.LogFragmentBinding
 import com.example.cmd.formatDate
-import com.example.cmd.getMillis
-import com.example.cmd.presentation.dialogs.InfoDialog
+import com.example.cmd.launchLifecycleAwareCoroutine
+import com.example.cmd.presentation.actions.LogsActions
 import com.example.cmd.presentation.dialogs.InputDigitDialog
 import com.example.cmd.presentation.dialogs.QuestionDialog
-import com.example.cmd.presentation.states.LogsScreenState
 import com.example.cmd.presentation.utils.DateValidatorAllowed
+import com.example.cmd.presentation.utils.DialogLauncher
 import com.example.cmd.presentation.viewmodels.LogsVM
+import com.example.cmd.presentation.viewmodels.LogsVM.Companion.CHANGE_TIMEOUT_REQUEST
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class LogsFragment : Fragment() {
@@ -56,13 +54,57 @@ class LogsFragment : Fragment() {
     //Обработка результатов диалогов с пользователем
     setDialogsListeners()
     setupMenu()
+    //Обработка событий
+    setupActionsListener()
   }
 
+  private fun setupActionsListener() {
+    val dialogLauncher = DialogLauncher(parentFragmentManager, context)
+    viewLifecycleOwner.launchLifecycleAwareCoroutine {
+      viewModel.logsActionFlow.collect {
+        when (it) {
+          is LogsActions.ShowUsualDialog -> dialogLauncher.launchDialogFromAction(it.value)
+          is LogsActions.showDatePicker -> with(it) { buildCalendar(dateValidator,selection) }
+        }
+      }
+    }
+  }
+
+  private fun buildCalendar(dateValidatorAllowed: DateValidatorAllowed,selection: Long) {
+    val constraintsBuilder =
+      getConstraints(dateValidatorAllowed) //Настраиваем ограничения для date picker, разрешаем выбирать те дни, за которые доступны логи.
+    val datePicker =
+      makeDatePicker(constraintsBuilder, selection)
+    datePicker.show(parentFragmentManager, MATERIAL_PICKER_TAG) //показываем календарь
+    datePicker.addOnPositiveButtonClickListener {
+      viewModel.openLogsForSelection(it)
+    }
+  }
+
+  private fun makeDatePicker(constraintsBuilder: CalendarConstraints.Builder, selection: Long) =
+    MaterialDatePicker.Builder.datePicker()
+      .setTitleText(getString(R.string.select_date))
+      .setSelection(
+        selection
+      )
+      .setCalendarConstraints(constraintsBuilder.build())
+      .setTheme(R.style.MyCalendar)
+      .build()
+
+  private fun getConstraints(dateValidatorAllowed: DateValidatorAllowed) = CalendarConstraints.Builder()
+    .setValidator(
+      dateValidatorAllowed
+    )
+
   private fun setDialogsListeners() {
-    QuestionDialog.setupListener(parentFragmentManager, CHANGE_TIMEOUT_REQUEST,viewLifecycleOwner) {
+    QuestionDialog.setupListener(
+      parentFragmentManager,
+      CHANGE_TIMEOUT_REQUEST,
+      viewLifecycleOwner
+    ) {
       viewModel.clearLogsForDay()
     }
-    InputDigitDialog.setupListener(parentFragmentManager,viewLifecycleOwner) {
+    InputDigitDialog.setupListener(parentFragmentManager, viewLifecycleOwner) {
       viewModel.changeAutoDeletionTimeout(it)
     }
   }
@@ -77,65 +119,23 @@ class LogsFragment : Fragment() {
       override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
           R.id.calendar -> {
-            buildCalendar() //обновляем логи в приложении
+            viewModel.buildCalendar() //обновляем логи в приложении
           }
 
-          R.id.log_timeout -> {
-            InputDigitDialog.show(
-              parentFragmentManager,
-              getString(R.string.enter_timeout_logs),
-              viewModel.logsData.value.logsAutoRemovePeriod.toString(),
-              "",
-              0..10000
-            )
-          } //изменение тайм-аута очистки логов
-          R.id.clear_logs -> {
-            QuestionDialog.show(parentFragmentManager,getString(R.string.clear_logs_question),getString(R.string.logs_clear_warning,viewModel.logsState.value.date.formatDate()),CHANGE_TIMEOUT_REQUEST)
-          } //очистка логов за день
+          R.id.log_timeout -> viewModel.showChangeTimeoutDialog() //изменение тайм-аута очистки логов
+          R.id.clear_logs -> viewModel.showClearLogsDialog() //очистка логов за день
           android.R.id.home -> controller.popBackStack()
-          R.id.logs_help -> InfoDialog.show(parentFragmentManager,
-            getString(R.string.help),
-            getString(R.string.logs_help)
-          )
+          R.id.logs_help -> viewModel.showHelpDialog()
 
         }
         return true
       }
-
-      private fun buildCalendar() {
-        val constraintsBuilder =
-          getConstraints() //Настраиваем ограничения для date picker, разрешаем выбирать те дни, за которые доступны логи.
-        val datePicker =
-          makeDatePicker(constraintsBuilder)
-        datePicker.show(parentFragmentManager, MATERIAL_PICKER_TAG) //показываем календарь
-        datePicker.addOnPositiveButtonClickListener {
-          viewModel.openLogsForSelection(it)
-        }
-      }
-
-      private fun makeDatePicker(constraintsBuilder: CalendarConstraints.Builder) =
-        MaterialDatePicker.Builder.datePicker()
-          .setTitleText(getString(R.string.select_date))
-          .setSelection(
-            viewModel.logsState.value.date.getMillis()
-          )
-          .setCalendarConstraints(constraintsBuilder.build())
-          .setTheme(R.style.MyCalendar)
-          .build()
-
-      private fun getConstraints() = CalendarConstraints.Builder()
-        .setValidator(
-          DateValidatorAllowed(
-            viewModel.logsData.value.logDates.toSet()
-          )
-        )
     }, viewLifecycleOwner, Lifecycle.State.RESUMED)
   }
 
   private fun setupActionBar() {
-    lifecycleScope.launch {
+    viewLifecycleOwner.launchLifecycleAwareCoroutine {
       viewModel.logsState.collect {
-        Log.w("newState",(it is LogsScreenState.ViewLogs).toString())
         (activity as AppCompatActivity).supportActionBar?.title = it.date.formatDate()
       }
     }
@@ -149,7 +149,6 @@ class LogsFragment : Fragment() {
 
   companion object {
     private const val MATERIAL_PICKER_TAG = "material_picker_tag"
-    private const val CHANGE_TIMEOUT_REQUEST = "change_timeout_request"
   }
 
 }

@@ -1,7 +1,9 @@
 package com.example.cmd
 
-import androidx.core.content.ContextCompat
-import com.google.android.material.button.MaterialButton
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -11,7 +13,12 @@ fun LocalDateTime.getMillis() = this.atZone(ZoneId.systemDefault()).toInstant().
 
 fun LocalDateTime.getEpochDays() = this.toLocalDate().toEpochDay()
 
-fun MaterialButton.setButtonColor(color: Int) {
-  setStrokeColorResource(color)
-  setTextColor(ContextCompat.getColor(context, color))
+fun LifecycleOwner.launchLifecycleAwareCoroutine(coroutine: suspend () -> Unit) {
+  with(this) {
+    this.lifecycleScope.launch {
+      this@with.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+        coroutine()
+      }
+    }
+  }
 }

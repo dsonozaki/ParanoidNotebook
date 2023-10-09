@@ -3,7 +3,8 @@ package com.example.cmd.data.crypto
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.KeyStore
@@ -51,14 +52,16 @@ class CryptoManager @Inject constructor() {
     }.generateKey()
   }
 
-  fun encryptToFile(bytes: ByteArray, outputStream: OutputStream): ByteArray {
+  suspend fun encryptToFile(bytes: ByteArray, outputStream: OutputStream): ByteArray {
     val cypher = encryptCipher
     val encryptedBytes = cypher.doFinal(bytes)
-    outputStream.use {
-      it.write(cypher.iv.size)
-      it.write(cypher.iv)
-      it.write(encryptedBytes.size)
-      it.write(encryptedBytes)
+    withContext(Dispatchers.IO) {
+      outputStream.use {
+        it.write(cypher.iv.size)
+        it.write(cypher.iv)
+        it.write(encryptedBytes.size)
+        it.write(encryptedBytes)
+      }
     }
     return encryptedBytes
   }
@@ -93,18 +96,17 @@ class CryptoManager @Inject constructor() {
 
   fun decryptString(input: String): String = buildString {
     val (ivEncoded, passwordEncoded) = input.split(DELIMITER)
-    Log.w("ivEncoded",ivEncoded)
-    Log.w("byte20", Char(20).toString())
-    Log.w("passwordEncoded",passwordEncoded)
     if (Build.VERSION.SDK_INT >= 26) {
       val decoder = Base64.getDecoder()
       val iv = decoder.decode(ivEncoded)
       val passwordCiphered = decoder.decode(passwordEncoded)
-      append(getDecryptCipherForIv(iv).doFinal(passwordCiphered))
+      val decryptedBytes = getDecryptCipherForIv(iv).doFinal(passwordCiphered)
+      append(decryptedBytes.decodeToString())
     } else {
       val iv = android.util.Base64.decode(ivEncoded,0)
       val passwordCiphered = android.util.Base64.decode(passwordEncoded,0)
-      append(getDecryptCipherForIv(iv).doFinal(passwordCiphered))
+      val decryptedBytes = getDecryptCipherForIv(iv).doFinal(passwordCiphered)
+      append(decryptedBytes.decodeToString())
     }
   }
 

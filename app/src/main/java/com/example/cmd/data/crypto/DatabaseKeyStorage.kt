@@ -1,6 +1,7 @@
 package com.example.cmd.data.crypto
 
 import android.content.Context
+import android.os.Build
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -20,7 +21,11 @@ private val cryptoManager: CryptoManager,
 
   private fun generateRandomKey(): ByteArray =
     ByteArray(32).apply {
-      SecureRandom.getInstanceStrong().nextBytes(this)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        SecureRandom.getInstanceStrong().nextBytes(this)
+      } else {
+        SecureRandom().nextBytes(this)
+      }
     }
 
   private fun ByteArray.toHex(): String {

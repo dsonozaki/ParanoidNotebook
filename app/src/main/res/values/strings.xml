@@ -22,7 +22,7 @@
   <string name="true_app_name">Paranoid Notebook</string>
   <string name="settingsPass">Пароль настроек</string>
   <string name="mainPass">Главный пароль</string>
-  <string name="fileDetails">Название: %1$s\n Размер: %2$s\n Приоритет: %3$d</string>
+  <string name="fileDetails">Название: %1$s\n Приоритет: %2$s\n Размер: %3$s</string>
   <string name="setPasswords">Установите пароли, не включающие друг друга</string>
   <string name="next">Далее</string>
   <string name="ok">OK</string>
@@ -110,4 +110,6 @@
   <string name="logs_clear_warning">"Логи за %1$s будут стёрты"</string>
   <string name="edit_text">Редактировать</string>
   <string name="save_text">Сохранить</string>
+    <string name="new_prevention">Вы уже пытались остановить автоудаление раньше</string>
+    <string name="timeout_logs_long">Логи будут автоматически очищаться каждые n дней, чтобы не занимать лишнее место</string>
 </resources>

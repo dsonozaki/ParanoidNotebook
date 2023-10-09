@@ -10,7 +10,7 @@ import java.util.Locale
 //DateValidator для Calendar Picker. Позволяет проверять, находится ли выбранная дата в множестве разрешённых дат.
 class DateValidatorAllowed(private val allowed: Set<String>) : DateValidator {
   override fun isValid(date: Long): Boolean {
-    val sdf = SimpleDateFormat("uuuu-MM-dd", Locale.US)
+    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     val day = sdf.format(Date(date))
     return day in allowed
   }

@@ -8,13 +8,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.cmd.databinding.EditPasswordsFragmentBinding
+import com.example.cmd.launchLifecycleAwareCoroutine
 import com.example.cmd.presentation.viewmodels.EditPasswordsVM
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class EditPasswordsFragment : Fragment() {
@@ -47,7 +46,7 @@ class EditPasswordsFragment : Fragment() {
   }
 
   private fun setupGoToMainScreenListener() {
-    lifecycleScope.launch {
+    viewLifecycleOwner.launchLifecycleAwareCoroutine {
       viewModel.goToMainScreenFlow.collect {
         controller.navigate(EditPasswordsFragmentDirections.passwordsInitialized())
       }

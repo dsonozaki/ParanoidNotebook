@@ -4,7 +4,7 @@ import com.example.cmd.presentation.states.DeletionActivationStatus
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AutoDeletionData(val isActive: Boolean = false, val timeOut: Int = 0, val xiaomiPhoneNotificationRequired: Boolean) {
+data class AutoDeletionData(val isActive: Boolean = false, val timeOut: Int = 0, val xiaomiPhoneNotificationRequired: Boolean = false) {
   fun toDeletionActivationStatus(): DeletionActivationStatus {
     if (this.isActive) {
       return DeletionActivationStatus.ACTIVE

@@ -11,7 +11,7 @@ import java.io.OutputStream
 
 object DeletionStatusSerializer: Serializer<DeletionStatus> {
   override val defaultValue: DeletionStatus
-    get() = DeletionStatus()
+    get() = DeletionStatus.Completed()
 
   override suspend fun readFrom(input: InputStream): DeletionStatus {
     return try {

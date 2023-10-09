@@ -93,27 +93,29 @@ class LogsTextRepositoryImpl @Inject constructor(
     return StringStatus.STRING_BODY
   }
 
-  private fun readFromFile(date: String): String {
+  private suspend fun readFromFile(date: String): String {
     var message = ""
     return buildString {
-      File("$logsDirectory/$date").bufferedReader().readLines().forEach {
-        when (stringStatus(it)) {
-          StringStatus.STRING_BODY -> message += it
-          StringStatus.ENCRYPTED_END -> {
-            message += it.dropLast(STRING_ENCODED.length+1)
-            message = cryptoManager.decryptString(message)
-            appendLine(message)
-            message = ""
-          }
+      withContext(Dispatchers.IO) {
+        File("$logsDirectory/$date").bufferedReader().readLines().forEach {
+          when (stringStatus(it)) {
+            StringStatus.STRING_BODY -> message += it
+            StringStatus.ENCRYPTED_END -> {
+              message += it.dropLast(STRING_ENCODED.length + 1)
+              message = cryptoManager.decryptString(message)
+              appendLine(message)
+              message = ""
+            }
 
-          StringStatus.DECRYPTED_END -> {
-            message += it.dropLast(NORMAL_STRING.length+1)
-            appendLine(message)
-            message = ""
+            StringStatus.DECRYPTED_END -> {
+              message += it.dropLast(NORMAL_STRING.length + 1)
+              appendLine(message)
+              message = ""
+            }
           }
         }
       }
-    } //?
+    }
   }
 
   override suspend fun clearLogsForDays(days: Set<String>) {
@@ -138,7 +140,9 @@ class LogsTextRepositoryImpl @Inject constructor(
 
 
   override suspend fun clearLogsForDay(day: String) {
-    File("$logsDirectory/$day").delete()
+    withContext(Dispatchers.IO) {
+      File("$logsDirectory/$day").delete()
+    }
     checkOldLogs(day).let {
       if (it == LogState.CURRENT_LOG_FILE) {
         newLogs.emit(LogEntity(LocalDateTime.now(), "", it))
@@ -182,17 +186,18 @@ class LogsTextRepositoryImpl @Inject constructor(
   private suspend fun writeLogsString(string: String, encrypted: Boolean) {
     val currentDateTime = LocalDateTime.now()
     val logState = checkForNewFile(currentDateTime)
-    val writer = withContext(Dispatchers.IO) {
-      FileOutputStream(
-        File("$logsDirectory/${currentDateTime.formatDate()}"),
-        true
-      ).bufferedWriter()
+    withContext(Dispatchers.IO) {
+      val writer =
+        FileOutputStream(
+          File("$logsDirectory/${currentDateTime.formatDate()}"),
+          true
+        ).bufferedWriter()
+      val toWrite = java.time.LocalTime.now().format(
+        DateTimeFormatter.ofPattern("HH:mm:ss")
+      ) + ' ' + string
+      writer.writeToLogs(toWrite, encrypted)
+      newLogs.emit(LogEntity(currentDateTime, toWrite, logState))
     }
-    val toWrite = java.time.LocalTime.now().format(
-      DateTimeFormatter.ofPattern("HH:mm:ss")
-    ) + ' ' + string
-    writer.writeToLogs(toWrite, encrypted)
-    newLogs.emit(LogEntity(currentDateTime, toWrite, logState))
   }
 
 

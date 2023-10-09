@@ -4,6 +4,9 @@
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
   <uses-permission android:name="android.permission.QUICKBOOT_POWERON" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission
+    android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
 
   <application
     android:name=".presentation.NotebookApp"

@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.cmd.R
 import com.example.cmd.domain.entities.AppInitStatus
 import com.example.cmd.domain.entities.ContainPasswords
-import com.example.cmd.domain.entities.DeletionState
+import com.example.cmd.domain.entities.DeletionStatus
 import com.example.cmd.domain.entities.Passwords
 import com.example.cmd.domain.usecases.autodeletion.status.GetDeletionStatusUseCase
 import com.example.cmd.domain.usecases.autodeletion.status.PreventDeletionUseCase
@@ -54,7 +54,6 @@ class MainVM @Inject constructor(
     viewModelScope.launch {
       getDataUseCase().let {
         passwords = getPasswordsFlowUseCase().first()
-        Log.w("passwords",passwords.mainPass+passwords.settingsPass)
         when (it.appInitStatus) {
           AppInitStatus.INITIALISING -> {
             if (passwords.isEmpty()) {
@@ -79,22 +78,30 @@ class MainVM @Inject constructor(
 
   fun onTextEntered(text: String) {
     viewModelScope.launch {
-      Log.w("passwords",passwords.mainPass+passwords.settingsPass)
       when (passwords.containsString(text)) {
         ContainPasswords.CONTAINS_SETTINGS -> changeStateOnSettingsPassword()
         ContainPasswords.CONTAINS_NOTHING -> changeStateOnNoPassword()
-        ContainPasswords.CONTAINS_MAIN ->  showAutoDeletionStatus()
+        ContainPasswords.CONTAINS_MAIN -> showAutoDeletionStatus()
       }
     }
   }
 
   private suspend fun showAutoDeletionStatus() {
-    val deletionResultString =
-      when (getDeletionStatusUseCase().first().deletionState) {
-        DeletionState.COMPLETE -> R.string.too_late
-        DeletionState.NOT_STARTED -> R.string.full_saved
-        DeletionState.STARTED -> R.string.part_saved
+    val deletionStatus = getDeletionStatusUseCase().first()
+    val deletionResultString = when (deletionStatus) {
+      is DeletionStatus.Deleting -> R.string.part_saved
+      is DeletionStatus.Completed ->
+        if (deletionStatus.isActualState()) {
+          R.string.too_late
+        } else {
+          R.string.full_saved
+        }
+      is DeletionStatus.Prevented -> if (deletionStatus.isActualState()) {
+        R.string.new_prevention
+      } else {
+        R.string.full_saved
       }
+    }
     preventDeletionUseCase()
     startScreenActionsChannel.send(
       StartScreenActions.ShowToast(
@@ -112,17 +119,19 @@ class MainVM @Inject constructor(
   }
 
   private suspend fun changeStateOnSettingsPassword() {
+    Log.w("currentState",currentState.value.javaClass.toString())
     when (currentState.value) {
-      is StartScreenState.SecretModeEditing -> {}
       is StartScreenState.ShowHintEditing -> {
         finishInitializationUseCase()
         _currentState.emit(StartScreenState.SecretModeEditing)
       }
+
       is StartScreenState.NormalModeEditing -> {
         startScreenActionsChannel.send(StartScreenActions.WriteToLogs)
         _currentState.emit(StartScreenState.SecretModeEditing)
       }
-      else -> throw RuntimeException("Strange state in text change listener: ${currentState.value.javaClass.name}")
+
+      else -> {}
     }
   }
 

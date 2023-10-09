@@ -1,5 +1,7 @@
 package com.example.cmd.presentation.fragments
 
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -8,16 +10,20 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.cmd.R
 import com.example.cmd.databinding.MainFragmentBinding
+import com.example.cmd.launchLifecycleAwareCoroutine
 import com.example.cmd.presentation.actions.StartScreenActions
 import com.example.cmd.presentation.states.StartScreenState
 import com.example.cmd.presentation.viewmodels.MainVM
@@ -52,7 +58,27 @@ class MainFragment : Fragment() {
     setupActionsListener()
     (activity as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(false)
     //снятие/восстановление маскировки
+    getAccess()
     setupMenu()
+  }
+
+  private fun getAccess() {
+    val requestPermissionLauncher =
+      registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+      ) { granted ->
+        if (!granted)
+          Toast.makeText(
+            requireContext(),
+            getString(R.string.access_denied),
+            Toast.LENGTH_SHORT
+          ).show()
+      }
+    if (ContextCompat.checkSelfPermission(requireActivity(), WRITE_EXTERNAL_STORAGE)
+      != PackageManager.PERMISSION_GRANTED
+    ) {
+      requestPermissionLauncher.launch(WRITE_EXTERNAL_STORAGE)
+    }
   }
 
   private fun setupMenu() {
@@ -60,49 +86,59 @@ class MainFragment : Fragment() {
       override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.main_uncovered_save, menu)
         lifecycleScope.launch {
-          viewModel.currentState.collect {
-            when (it) {
-              is StartScreenState.Loading -> {}
-              is StartScreenState.ShowHintEditing -> {
-                menu.changeItems(setOf())
-              }
+          repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            menuItemsFromState(menu)
+          }
+        }
+      }
 
-              is StartScreenState.ShowHint, is StartScreenState.NormalMode -> {
-                menu.changeItems(setOf(R.id.edit_text))
-              }
+      private suspend fun menuItemsFromState(menu: Menu) {
+        viewModel.currentState.collect {
+          when (it) {
+            is StartScreenState.Loading -> {}
+            is StartScreenState.ShowHintEditing -> {
+              menu.changeItems(setOf())
+            }
 
-              is StartScreenState.NormalModeEditing -> {
-                (activity as AppCompatActivity).supportActionBar?.title =
-                  resources.getString(R.string.app_name)
-                menu.changeItems(setOf(R.id.save))
-              }
+            is StartScreenState.ShowHint, is StartScreenState.NormalMode -> {
+              (activity as AppCompatActivity).supportActionBar?.title =
+                resources.getString(R.string.app_name)
+              menu.changeItems(setOf(R.id.edit_text))
+            }
 
-              is StartScreenState.SecretMode -> {
-                menu.changeItems(
-                  setOf(
-                    R.id.edit_text,
-                    R.id.passwords,
-                    R.id.deletion,
-                    R.id.log,
-                    R.id.aboutApp
-                  )
+            is StartScreenState.NormalModeEditing -> {
+              (activity as AppCompatActivity).supportActionBar?.title =
+                resources.getString(R.string.app_name)
+              menu.changeItems(setOf(R.id.save))
+            }
+
+            is StartScreenState.SecretMode -> {
+              (activity as AppCompatActivity).supportActionBar?.title =
+                resources.getString(R.string.true_app_name)
+              menu.changeItems(
+                setOf(
+                  R.id.edit_text,
+                  R.id.passwords,
+                  R.id.deletion,
+                  R.id.log,
+                  R.id.aboutApp
                 )
-              }
+              )
+            }
 
-              is StartScreenState.SecretModeEditing -> {
-                (activity as AppCompatActivity).supportActionBar?.title =
-                  resources.getString(R.string.true_app_name)
-                menu.changeItems(
-                  setOf(
-                    R.id.save,
-                    R.id.passwords,
-                    R.id.deletion,
-                    R.id.log,
-                    R.id.aboutApp
-                  )
+            is StartScreenState.SecretModeEditing -> {
+              (activity as AppCompatActivity).supportActionBar?.title =
+                resources.getString(R.string.true_app_name)
+              menu.changeItems(
+                setOf(
+                  R.id.save,
+                  R.id.passwords,
+                  R.id.deletion,
+                  R.id.log,
+                  R.id.aboutApp
                 )
+              )
 
-              }
             }
           }
         }
@@ -141,22 +177,27 @@ class MainFragment : Fragment() {
   }
 
   private fun setupActionsListener() {
-    lifecycleScope.launch {
-      viewModel.startScreenActionsFlow.collect {
-        when (it) {
-          is StartScreenActions.ShowToast -> Toast.makeText(
-            requireContext(),
-            it.message.asString(context),
-            Toast.LENGTH_SHORT
-          ).show()
+    viewLifecycleOwner.launchLifecycleAwareCoroutine {
+      actionFromState()
+    }
+  }
 
-          is StartScreenActions.CreatePasswords -> controller.navigate(
-            MainFragmentDirections.createPasswords(
-              true
-            )
+  private suspend fun actionFromState() {
+    viewModel.startScreenActionsFlow.collect {
+      when (it) {
+        is StartScreenActions.ShowToast -> Toast.makeText(
+          requireContext(),
+          it.message.asString(context),
+          Toast.LENGTH_SHORT
+        ).show()
+
+        is StartScreenActions.CreatePasswords -> controller.navigate(
+          MainFragmentDirections.createPasswords(
+            true
           )
-          is StartScreenActions.WriteToLogs -> viewModel.writeLogs(getString(R.string.enter))
-        }
+        )
+
+        is StartScreenActions.WriteToLogs -> viewModel.writeLogs(getString(R.string.enter))
       }
     }
   }

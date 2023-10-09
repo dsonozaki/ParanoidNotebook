@@ -9,11 +9,11 @@ class MyFileMapper @Inject constructor() {
   private fun mapDbToDtModel(myFileDbModel: MyFileDbModel) =
     MyFileDomain(
       size = myFileDbModel.size,
-      path = myFileDbModel.path,
+      name = myFileDbModel.name,
       priority = myFileDbModel.priority,
       uri = Uri.parse(myFileDbModel.uri),
       fileType = myFileDbModel.fileType,
-      sizeFormated = myFileDbModel.sizeFormated
+      sizeFormatted = myFileDbModel.sizeFormatted
     )
 
   fun mapDbListToDtList(dbList: List<MyFileDbModel>): List<MyFileDomain> =
