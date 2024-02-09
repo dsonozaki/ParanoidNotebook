@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools">
+
+  <androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <androidx.constraintlayout.widget.Guideline
+      android:id="@+id/guideline9"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      app:layout_constraintGuide_end="8dp" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+      android:id="@+id/add"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="end"
+      android:clickable="true"
+      android:focusable="true"
+      android:text="@string/add_note"
+      app:fabSize="normal"
+      app:icon="@drawable/ic_baseline_add_24"
+      app:layout_constraintBottom_toTopOf="@+id/guideline23"
+      app:layout_constraintEnd_toStartOf="@+id/guideline9"
+      app:rippleColor="?attr/background" />
+
+    <androidx.recyclerview.widget.RecyclerView
+      android:id="@+id/items"
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:scrollbars="vertical"
+      app:layout_constraintBottom_toTopOf="@+id/guideline23"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintHorizontal_bias="0.0"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/sort"
+      tools:listitem="@layout/note_cardview" />
+
+    <androidx.constraintlayout.widget.Guideline
+      android:id="@+id/guideline23"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      app:layout_constraintGuide_end="8dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+      android:id="@+id/guideline14"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      app:layout_constraintGuide_begin="8dp" />
+
+    <TextView
+      android:id="@+id/sort"
+      style="?attr/textAppearanceBodyLarge"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:paddingStart="8dp"
+      android:paddingTop="8dp"
+      android:paddingBottom="4dp"
+      android:singleLine="true"
+      android:text="@string/sort"
+      app:drawableLeftCompat="@drawable/ic_baseline_sort_24"
+      app:layout_constraintStart_toEndOf="@+id/guideline14"
+      app:layout_constraintTop_toTopOf="parent" />
+
+    <ProgressBar
+      android:id="@+id/progressBa"
+      style="?android:attr/progressBarStyle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:layout_constraintBottom_toTopOf="@+id/guideline23"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/sort" />
+
+  </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

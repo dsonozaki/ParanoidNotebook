@@ -2,6 +2,7 @@ package com.example.cmd.presentation.utils
 
 import android.content.Context
 import android.util.Log
+import com.example.cmd.getColorForAttribute
 
 sealed class UIText {
   data class UsualString(val value: String) : UIText()
@@ -21,7 +22,8 @@ sealed class UIText {
       is StringResource -> context?.getString(id, *arguments) ?: throw RuntimeException("context is not provided")
       is ColoredHTMLText -> {
         val colors = this.colors.map {
-          context?.resources?.getString(it)?.removeRange(1..2) ?: throw RuntimeException("context is not provided")
+          val id = context?.getColorForAttribute(it) ?: throw RuntimeException("context is not provided")
+          context.resources.getString(id).removeRange(1..2)
         }.toTypedArray()
         Log.w("colors",colors.joinToString())
         Log.w("currenttext",this.text.colorize(*colors))

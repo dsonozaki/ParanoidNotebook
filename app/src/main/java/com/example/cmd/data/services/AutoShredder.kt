@@ -5,18 +5,19 @@ import android.os.Build
 import androidx.documentfile.provider.DocumentFile
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.example.cmd.R
 import com.example.cmd.domain.entities.DeletionStatus
 import com.example.cmd.domain.entities.FileType
 import com.example.cmd.domain.entities.MyFileDomain
-import com.example.cmd.domain.usecases.autodeletion.data.GetAutoDeletionDataUseCase
 import com.example.cmd.domain.usecases.autodeletion.status.CompleteDeletionUseCase
 import com.example.cmd.domain.usecases.autodeletion.status.GetDeletionStatusUseCase
 import com.example.cmd.domain.usecases.autodeletion.status.StartDeletionUseCase
-import com.example.cmd.domain.usecases.database.DeleteMyFileUseCase
-import com.example.cmd.domain.usecases.database.GetFilesDbUseCase
+import com.example.cmd.domain.usecases.filesDatabase.DeleteMyFileUseCase
+import com.example.cmd.domain.usecases.filesDatabase.GetFilesDbUseCase
 import com.example.cmd.domain.usecases.logs.WriteToLogsEncryptedUseCase
 import com.example.cmd.domain.usecases.logs.WriteToLogsUseCase
 import dagger.assisted.Assisted
@@ -28,7 +29,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -38,7 +38,6 @@ import kotlinx.coroutines.launch
 class AutoShredder @AssistedInject constructor(
   @Assisted private val context: Context,
   @Assisted workerParams: WorkerParameters,
-  private val getAutoDeletionDataUseCase: GetAutoDeletionDataUseCase,
   private val writeToLogsUseCase: WriteToLogsUseCase,
   private val getFilesDbUseCase: GetFilesDbUseCase,
   private val getDeletionStatusUseCase: GetDeletionStatusUseCase,
@@ -52,26 +51,17 @@ class AutoShredder @AssistedInject constructor(
   private var filesList = listOf<MyFileDomain>()
 
   override suspend fun doWork(): Result {
-    val autoDeletionData = getAutoDeletionDataUseCase().first()
-    if (!autoDeletionData.isActive) { //запущено ли автоудаление?
-      return Result.success()
-    }
     coroutineScope {
       val job1 = launch {
         writeToLogsUseCase(context.getString(R.string.deletion_launched))
       }
       val job2 = launch {
-        val timeOut = autoDeletionData.timeOut.toLong()
-        writeToLogsUseCase(context.getString(R.string.deletion_confirmed, timeOut))
-        delay(timeOut)
-      }
-      val job3 = launch {
         version = Build.VERSION.SDK_INT //?
       }
-      val job4 = launch {
+      val job3 = launch {
         filesList = getFilesDbUseCase().first()
       }
-      joinAll(job1, job2, job3, job4)
+      joinAll(job1, job2, job3)
       writeToLogsUseCase(context.getString(R.string.deletion_started))
       removeAll()
     }
@@ -206,7 +196,7 @@ class AutoShredder @AssistedInject constructor(
   }
 
 
-  //HMGIS5 для файлов на SD-карте. На выходе общее число файлов и число удалённых файлов.
+  //Удаление файлов на SD-карте. На выходе общее число файлов и число удалённых файлов.
   private suspend fun deleteFile(
     df: DocumentFile,
     path: String,
@@ -248,8 +238,13 @@ class AutoShredder @AssistedInject constructor(
   companion object {
     const val WORK_NAME = "auto_shredder"
 
-    fun getInstance() =
-      OneTimeWorkRequestBuilder<AutoShredder>().build()
+    fun start(context: Context) {
+      val workManager = WorkManager.getInstance(context)
+      workManager.enqueueUniqueWork(WORK_NAME,
+        ExistingWorkPolicy.REPLACE,
+        OneTimeWorkRequestBuilder<AutoShredder>().build()
+      )
+    }
 
   }
 

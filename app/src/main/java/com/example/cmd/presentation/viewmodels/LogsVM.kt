@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.cmd.R
 import com.example.cmd.domain.entities.LogState
 import com.example.cmd.domain.usecases.logs.ChangeAutoDeletionTimeOutUseCase
+import com.example.cmd.domain.usecases.logs.ChangeLogsEnabledUseCase
 import com.example.cmd.domain.usecases.logs.ClearLogsForDayUseCase
 import com.example.cmd.domain.usecases.logs.GetLogsDataUseCase
 import com.example.cmd.domain.usecases.logs.GetLogsUseCase
@@ -41,7 +42,8 @@ class LogsVM @Inject constructor(
   private val clearLogsForDayUseCase: ClearLogsForDayUseCase,
   private val lookLogsForDayUseCase: LookLogsForDayUseCase,
   private val updateStatesFlow: MutableSharedFlow<LogsDataState>,
-  private val logsActionsChannel: Channel<LogsActions>
+  private val logsActionsChannel: Channel<LogsActions>,
+  private val changeLogsEnabledUseCase: ChangeLogsEnabledUseCase
 ) :
   ViewModel() {
 
@@ -49,13 +51,17 @@ class LogsVM @Inject constructor(
 
   private var logsText = ""
 
+  val logsEnabled = getLogsDataUseCase().map { it.logsEnabled }.stateIn(
+   viewModelScope, SharingStarted.WhileSubscribed(5000),false
+  )
+
   val logsState: StateFlow<LogsDataState> =
     getLogsUseCase().map {
       if (it.logState == LogState.NEW_LOG_STRING) {
         logsText += it.logs.colorizeLogsString()
         return@map LogsDataState.ViewLogs(
           it.today,
-          UIText.ColoredHTMLText(logsText, R.color.amtheme, R.color.whitetext)
+          UIText.ColoredHTMLText(logsText, com.google.android.material.R.attr.colorPrimary, com.google.android.material.R.attr.colorOnBackground)
         )
       }
       logsText = buildString {
@@ -65,7 +71,7 @@ class LogsVM @Inject constructor(
       }
       LogsDataState.ViewLogs(
         it.today,
-        UIText.ColoredHTMLText(logsText, R.color.amtheme, R.color.whitetext)
+        UIText.ColoredHTMLText(logsText, com.google.android.material.R.attr.colorPrimary, com.google.android.material.R.attr.colorOnBackground)
       )
     }.mergeWith(updateStatesFlow).stateIn(
       scope = viewModelScope,
@@ -93,6 +99,36 @@ class LogsVM @Inject constructor(
     }
   }
 
+  fun changeLogsEnabledQuestion() {
+    viewModelScope.launch {
+      val title: Int
+      val text: Int
+      if (logsEnabled.value) {
+        title = R.string.disable_logs
+        text = R.string.disable_logs_long
+      } else {
+        title = R.string.enable_logs
+        text = R.string.enable_logs_long
+      }
+      logsActionsChannel.send(
+        LogsActions.ShowUsualDialog(
+          DialogActions.ShowQuestionDialog(
+            UIText.StringResource(title),
+            UIText.StringResource(text),
+            CHANGE_LOGS_ENABLED_REQUEST
+          )
+        )
+      )
+
+    }
+  }
+
+  fun changeLogsEnabled() {
+    viewModelScope.launch {
+      changeLogsEnabledUseCase()
+    }
+  }
+
 
   fun clearLogsForDay() {
     viewModelScope.launch {
@@ -115,7 +151,7 @@ class LogsVM @Inject constructor(
     viewModelScope.launch {
       val logsData = getLogsDataUseCase().first()
       logsActionsChannel.send(
-        LogsActions.showDatePicker(
+        LogsActions.ShowDatePicker(
           DateValidatorAllowed(logsData.logDates.toSet()),
           logsState.value.date.getMillis()
         )
@@ -169,5 +205,6 @@ class LogsVM @Inject constructor(
 
   companion object {
     const val CHANGE_TIMEOUT_REQUEST = "change_timeout_request"
+    const val CHANGE_LOGS_ENABLED_REQUEST = "change_logs_enabled_request"
   }
 }

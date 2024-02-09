@@ -14,8 +14,9 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 import javax.inject.Inject
-
-//Класс, отвечающий за шифрование и дешифрование данных. Сделать синглтоном
+/**
+ * Класс, отвечающий за шифрование и дешифрование данных.
+**/
 class CryptoManager @Inject constructor() {
   private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply {
     load(null)

@@ -1,5 +1,7 @@
 package com.example.cmd
 
+import android.content.Context
+import android.util.TypedValue
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -22,3 +24,10 @@ fun LifecycleOwner.launchLifecycleAwareCoroutine(coroutine: suspend () -> Unit) 
     }
   }
 }
+
+fun Context.getColorForAttribute(attributeId: Int): Int {
+  val color = TypedValue()
+  this.theme?.resolveAttribute(attributeId,color,true)
+  return color.resourceId
+}
+

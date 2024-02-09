@@ -1,0 +1,136 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:layout_margin="8dp"
+  android:orientation="vertical">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="start"
+    android:orientation="horizontal"
+    android:paddingTop="16dp"
+    android:id="@+id/select_theme">
+
+    <com.google.android.material.textview.MaterialTextView
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:paddingStart="8dp"
+      android:paddingEnd="8dp"
+      android:text="@string/theme"
+      style="?attr/textAppearanceTitleLarge">
+
+    </com.google.android.material.textview.MaterialTextView>
+
+    <com.google.android.material.textview.MaterialTextView
+      android:layout_width="0dp"
+      android:layout_height="match_parent"
+      android:layout_weight="1"
+      android:gravity="center|end"
+      android:paddingStart="8dp"
+      android:paddingEnd="8dp"
+      style="?attr/textAppearanceLabelLarge">
+
+    </com.google.android.material.textview.MaterialTextView>
+
+    <ImageView
+      android:layout_width="wrap_content"
+      android:layout_height="match_parent"
+      app:srcCompat="@drawable/baseline_unfold_more_24"
+      android:contentDescription="@string/select_theme" />
+
+  </LinearLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="start"
+    android:orientation="horizontal"
+    android:id="@+id/select_language"
+
+    android:paddingTop="16dp">
+
+    <com.google.android.material.textview.MaterialTextView
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:paddingStart="8dp"
+      android:paddingEnd="8dp"
+      android:text="@string/language"
+      style="?attr/textAppearanceTitleLarge">
+
+    </com.google.android.material.textview.MaterialTextView>
+
+    <com.google.android.material.textview.MaterialTextView
+      android:layout_width="0dp"
+      android:layout_height="match_parent"
+      android:layout_weight="1"
+      android:gravity="center|end"
+      android:paddingStart="8dp"
+      android:paddingEnd="8dp"
+      style="?attr/textAppearanceLabelLarge">
+
+    </com.google.android.material.textview.MaterialTextView>
+
+    <ImageView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      app:srcCompat="@drawable/baseline_g_translate_24"
+      android:contentDescription="@string/select_language" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="start"
+    android:orientation="horizontal"
+    android:id="@+id/export"
+    android:paddingTop="16dp">
+
+    <com.google.android.material.textview.MaterialTextView
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:paddingStart="8dp"
+      android:paddingEnd="8dp"
+      android:text="@string/send_data"
+      style="?attr/textAppearanceTitleLarge">
+
+    </com.google.android.material.textview.MaterialTextView>
+
+    <ImageView
+      android:layout_width="wrap_content"
+      android:layout_height="match_parent"
+      app:srcCompat="@drawable/baseline_cloud_upload_24"
+      android:contentDescription="@string/send_data" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/data_import"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="start"
+    android:orientation="horizontal"
+    android:paddingTop="16dp">
+
+    <com.google.android.material.textview.MaterialTextView
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:paddingStart="8dp"
+      android:paddingEnd="8dp"
+      android:text="@string/import_data"
+      style="?attr/textAppearanceTitleLarge">
+
+    </com.google.android.material.textview.MaterialTextView>
+
+    <ImageView
+      android:layout_width="wrap_content"
+      android:layout_height="match_parent"
+      app:srcCompat="@drawable/baseline_cloud_download_24"
+      android:contentDescription="@string/import_data"/>
+  </LinearLayout>
+
+</LinearLayout>

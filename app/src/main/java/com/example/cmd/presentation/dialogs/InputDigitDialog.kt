@@ -8,13 +8,14 @@ import android.os.Bundle
 import android.text.Html
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 import com.example.cmd.R
-import com.example.cmd.databinding.InputDialogFragmentBinding
+import com.example.cmd.databinding.DigitInputDialogFragmentBinding
+import com.example.cmd.presentation.validators.DigitInBoundsValidator
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 //Фрагмент диалога, требующего от пользователя ввода информации
 class InputDigitDialog : DialogFragment() {
@@ -26,12 +27,13 @@ class InputDigitDialog : DialogFragment() {
     val requestKey = arguments?.getString(ARG_REQUEST_KEY) ?: throw RuntimeException("Request key absent in InputDigitDialog")
     val minimum = arguments?.getInt(MINIMUM)?: throw RuntimeException("Minimum absent in InputDigitDialog")
     val maximum = arguments?.getInt(MAXIMUM) ?: throw RuntimeException("Maximum absent in InputDigitDialog")
-    val dialogBinding = InputDialogFragmentBinding.inflate(layoutInflater)
+    val dialogBinding = DigitInputDialogFragmentBinding.inflate(layoutInflater)
     dialogBinding.inputEditText.hint = hint
-    val dialog =  AlertDialog.Builder(requireActivity(), R.style.DarkDialogTheme)
+    val dialog =  MaterialAlertDialogBuilder(requireActivity())
       .setTitle(title)
       .setMessage(Html.fromHtml(message, Html.FROM_HTML_MODE_LEGACY))
       .setPositiveButton(R.string.ok, null)
+      .setNegativeButton(R.string.cancel) { dialog: DialogInterface, i: Int -> dialog.cancel() }
       .setView(dialogBinding.root)
       .create()
 
@@ -41,15 +43,12 @@ class InputDigitDialog : DialogFragment() {
 
       dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
         val enteredText = dialogBinding.inputEditText.text.toString()
-        if (enteredText.isBlank()) {
-          dialogBinding.inputEditText.error = getString(R.string.empty_value_in_dialog)
+        val validation = DigitInBoundsValidator(enteredText,minimum,maximum).validate()
+        if (!validation.isSuccess) {
+          dialogBinding.inputLayout.error = getString(validation.message!!)
           return@setOnClickListener
         }
         val text = enteredText.toIntOrNull()
-        if (text == null || text !in minimum..maximum){
-          dialogBinding.inputEditText.error = getString(R.string.number_out_of_range)
-          return@setOnClickListener
-        }
         if (requestKey == EDIT_PRIORITY_REQUEST) {
           val fileUri = arguments?.getString(
             FILE_URI) ?: throw RuntimeException("File Uri is not provided in priority editor")

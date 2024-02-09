@@ -7,7 +7,7 @@
 
     <variable
       name="viewmodel"
-      type="com.example.cmd.presentation.viewmodels.MainVM" />
+      type="com.example.cmd.presentation.viewmodels.MainFragmentVM" />
   </data>
 
   <androidx.constraintlayout.widget.ConstraintLayout
@@ -51,12 +51,10 @@
           android:layout_marginStart="8dp"
           android:layout_marginEnd="8dp"
           android:inputType="textMultiLine"
-          android:textColorHint="@color/lightgrey"
           app:boxStrokeColor="@null"
           app:hintEnabled="false"
           app:layout_constraintBaseline_toTopOf="@+id/guideline19"
           app:textInputLayoutFromStartState = "@{viewmodel.currentState}">
-
           <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/notebook"
             android:layout_width="match_parent"
@@ -68,12 +66,9 @@
             android:background="#00000000"
             android:paddingEnd="0dp"
             android:paddingBottom="0dp"
-            android:textColor="@color/whitetext"
-            android:textColorHint="@color/lightgrey"
             android:textCursorDrawable="@drawable/cursor_color"
             android:textSize="20sp"
             app:textInputFromStartState = "@{viewmodel.currentState}"/>
-
         </com.google.android.material.textfield.TextInputLayout>
 
       </LinearLayout>

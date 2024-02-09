@@ -3,27 +3,27 @@ package com.example.cmd.presentation.dialogs
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.core.text.HtmlCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 import com.example.cmd.R
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 //Фрагмент диалога, предлагающего пользователю сделать определённый выбор
 class QuestionDialog : DialogFragment() {
   override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
     val message = requireArguments().getString(MESSAGE) ?: throw RuntimeException("Message absent in QuestionDialog")
     val title = requireArguments().getString(TITLE) ?: throw RuntimeException("Title absent in QuestionDialog")
-    val requestKEy =  requireArguments().getString(ARG_REQUEST_KEY) ?: throw RuntimeException("Request key absent in QuestionDialog")
-    return AlertDialog.Builder(requireActivity(), R.style.DarkDialogTheme)
+    val requestKey =  requireArguments().getString(ARG_REQUEST_KEY) ?: throw RuntimeException("Request key absent in QuestionDialog")
+    return MaterialAlertDialogBuilder(requireActivity())
       .setTitle(title)
       .setMessage(HtmlCompat.fromHtml(message, HtmlCompat.FROM_HTML_MODE_LEGACY))
       .setNegativeButton(R.string.cancel) { dialog: DialogInterface, i: Int -> dialog.cancel() }
       .setPositiveButton(R.string.ok) { _, _ ->
         parentFragmentManager.setFragmentResult(
-          requestKEy,
+          requestKey,
           bundleOf(RESPONSE to true)
         )
       }

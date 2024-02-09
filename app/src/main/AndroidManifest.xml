@@ -31,6 +31,17 @@
       </intent-filter>
     </receiver>
 
+    <receiver
+      android:name=".data.services.CustomReceiver"
+      android:directBootAware="true"
+      android:enabled="true"
+      android:exported="true"
+      tools:ignore="ExportedReceiver">
+      <intent-filter>
+        <action android:name="com.example.cmd.action.TRIGGER" />
+      </intent-filter>
+    </receiver>
+
     <provider
       android:name="androidx.startup.InitializationProvider"
       android:authorities="${applicationId}.androidx-startup"

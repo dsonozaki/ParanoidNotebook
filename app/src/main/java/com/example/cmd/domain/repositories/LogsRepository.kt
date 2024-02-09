@@ -15,4 +15,5 @@ interface LogsRepository {
   suspend fun writeToLogsEncrypted(string: String)
 
   suspend fun lookLogsForDay(localDateTime: LocalDateTime)
+  suspend fun changeLogsEnabled()
 }

@@ -5,6 +5,7 @@ import com.example.cmd.domain.repositories.LogsDataRepository
 import com.example.cmd.domain.repositories.LogsRepository
 import com.example.cmd.domain.repositories.LogsTextRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -42,11 +43,19 @@ class LogsRepositoryImpl @Inject constructor(
     logsTextRepository.readLogsForDay(localDateTime)
   }
 
+  override suspend fun changeLogsEnabled() {
+    logsDataRepository.changeLogsEnabled()
+  }
+
   override suspend fun writeToLogs(string: String) {
-    logsTextRepository.writeToLogs(string)
+    if (logsDataRepository.logsData.first().logsEnabled) {
+      logsTextRepository.writeToLogs(string)
+    }
   }
 
   override suspend fun writeToLogsEncrypted(string: String) {
-    logsTextRepository.writeToLogsEncrypted(string)
+    if (logsDataRepository.logsData.first().logsEnabled) {
+      logsTextRepository.writeToLogsEncrypted(string)
+    }
   }
 }

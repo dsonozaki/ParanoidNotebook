@@ -9,4 +9,5 @@ interface LogsDataRepository {
   suspend fun editLogsAutoRemoveTimeout(timeout:Int)
   suspend fun removeDayFromLogs(day: String)
   suspend fun addDayToLogs(day: String)
+  suspend fun changeLogsEnabled()
 }

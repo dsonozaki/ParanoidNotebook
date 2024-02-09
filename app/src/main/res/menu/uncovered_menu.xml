@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  tools:showIn="navigation_view"
+  android:id="@+id/uncovered_menu">
+
+  <item android:title="@string/mainScreen"
+    android:id="@+id/mainFragment"
+    android:icon="@drawable/baseline_home_24"
+    android:orderInCategory="1"/>
+  <item android:title="@string/change_passwords"
+    android:id="@+id/editPasswordsFragment"
+    android:icon="@drawable/ic_baseline_vpn_key_24"
+    android:orderInCategory="2"/>
+  <item android:title="@string/deletion_settings"
+    android:id="@+id/deletionSettingsFragment"
+    android:icon="@drawable/ic_baseline_settings_24"
+    android:orderInCategory="3" />
+  <item android:title="@string/log"
+    android:id="@+id/logsFragment"
+    android:icon="@drawable/ic_baseline_text_snippet_24"
+    android:orderInCategory="4"/>
+  <item android:title="@string/fake_settings"
+    android:icon="@drawable/baseline_settings_24"
+    android:id="@+id/settingsFragment"
+    android:orderInCategory="5"/>
+  <item android:title="@string/about"
+    android:id="@+id/aboutFragment"
+    android:icon="@drawable/ic_baseline_help_outline_24"
+    android:orderInCategory="6"/>
+</menu>

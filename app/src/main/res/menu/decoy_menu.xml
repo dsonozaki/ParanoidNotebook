@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  tools:showIn="navigation_view"
+  android:id="@+id/decoy_menu">
+
+  <item android:title="@string/mainScreen"
+    android:id="@+id/mainFragment"
+    android:icon="@drawable/baseline_home_24"
+    android:orderInCategory="1"/>
+
+
+  <item android:title="@string/fake_settings"
+    android:icon="@drawable/baseline_settings_24"
+    android:id="@+id/settingsFragment"
+    android:orderInCategory="2"/>
+
+  <item android:title="@string/aboutprog"
+    android:icon="@drawable/ic__question_mark"
+    android:id="@+id/decoyAboutFragment"
+    android:orderInCategory="3"/>
+</menu>

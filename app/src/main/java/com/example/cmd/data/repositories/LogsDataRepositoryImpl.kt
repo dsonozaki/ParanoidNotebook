@@ -61,6 +61,12 @@ class LogsDataRepositoryImpl @Inject constructor(
     }
   }
 
+  override suspend fun changeLogsEnabled() {
+    context.logsDataStore.updateData {
+      it.copy(logsEnabled = !it.logsEnabled)
+    }
+  }
+
   override suspend fun removeDayFromLogs(day: String) {
     context.logsDataStore.updateData {
       val logDates : MutableList<String> = it.logDates.toMutableList()
@@ -68,6 +74,7 @@ class LogsDataRepositoryImpl @Inject constructor(
       it.copy(logDates = logDates.toList())
     }
   }
+
 
 
   companion object {

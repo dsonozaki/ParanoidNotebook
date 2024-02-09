@@ -4,14 +4,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.cmd.R
 import com.example.cmd.databinding.EditPasswordsFragmentBinding
 import com.example.cmd.launchLifecycleAwareCoroutine
+import com.example.cmd.presentation.MainActivity
+import com.example.cmd.presentation.states.Page
 import com.example.cmd.presentation.viewmodels.EditPasswordsVM
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -39,16 +41,20 @@ class EditPasswordsFragment : Fragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    (activity as AppCompatActivity).supportActionBar?.hide()
     setupButtons()
     setupTextChangedListener()
     setupGoToMainScreenListener()
+    setMainActivityState()
+  }
+
+  private fun setMainActivityState() {
+    (activity as MainActivity).setPage(Page.ChangePasswords())
   }
 
   private fun setupGoToMainScreenListener() {
     viewLifecycleOwner.launchLifecycleAwareCoroutine {
       viewModel.goToMainScreenFlow.collect {
-        controller.navigate(EditPasswordsFragmentDirections.passwordsInitialized())
+        controller.navigate(R.id.mainFragment)
       }
     }
   }
@@ -88,7 +94,6 @@ class EditPasswordsFragment : Fragment() {
 
   override fun onDestroyView() {
     super.onDestroyView()
-    (activity as AppCompatActivity).supportActionBar?.show()
     _editPasswordsBinding = null
   }
 

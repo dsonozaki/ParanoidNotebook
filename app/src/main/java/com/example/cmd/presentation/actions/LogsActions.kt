@@ -4,5 +4,6 @@ import com.example.cmd.presentation.utils.DateValidatorAllowed
 
 sealed class LogsActions {
   class ShowUsualDialog(val value: DialogActions): LogsActions()
-  class showDatePicker(val dateValidator: DateValidatorAllowed, val selection: Long): LogsActions()
+  class ShowDatePicker(val dateValidator: DateValidatorAllowed, val selection: Long): LogsActions()
+
 }

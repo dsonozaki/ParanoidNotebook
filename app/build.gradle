@@ -4,6 +4,7 @@ plugins {
   id 'kotlin-kapt'
   id 'org.jetbrains.kotlin.plugin.serialization'
   id 'com.google.dagger.hilt.android'
+  id 'com.google.devtools.ksp'
 }
 
 android {
@@ -48,14 +49,15 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
 
 dependencies {
-  ext.navigation_version = "2.7.2"
-  ext.room_version = "2.6.0-rc01"
-  ext.lifecycle_version = "2.6.2"
-  ext.runtime_ktx_version = "2.8.1"
+  implementation 'androidx.window:window:1.2.0'
+  ext.navigation_version = "2.7.6"
+  ext.room_version = "2.6.1"
+  ext.lifecycle_version = "2.7.0"
+  ext.runtime_ktx_version = "2.9.0"
   ext.annotation_version = "1.5.0"
   ext.first_version = "1.0.0"
   ext.sqlcipher_version = "4.4.0"
-  ext.sqlite_version = "2.3.1"
+  ext.sqlite_version = "2.4.0"
   ext.coroutines_version = "1.7.3"
   ext.fragment_version = "1.5.3"
   ext.storage_version = "1.5.5"
@@ -68,19 +70,21 @@ dependencies {
   ext.datetime_version = "0.4.0"
   ext.espresso_version = "3.5.1"
   ext.coil_version = "2.1.0"
-  ext.fragment_version = "1.7.0-alpha02"
+  ext.fragment_version = "1.7.0-alpha09"
   ext.datastore_version = "1.0.0"
   ext.dagger_version = "2.35.1"
   ext.collections_version = "0.3.5"
   ext.serialization_version = "1.6.0"
   ext.datastore_1_version = "1.0.0"
   ext.hilt_version = "2.47"
-  ext.material_version = "1.9.0"
+  ext.material_version = "1.11.0"
   ext.desugaring_version = "2.0.3"
-  ext.hilt_worker_version = "1.0.0"
+  ext.hilt_worker_version = "1.1.0"
+  ext.leakcanary_version = "2.12"
+  ext.circleImageview_version = "3.1.0"
   implementation 'androidx.core:core-ktx:1.12.0'
   implementation "com.google.dagger:dagger:$dagger_version"
-  kapt "com.google.dagger:dagger-compiler:$dagger_version"
+  ksp "com.google.dagger:dagger-compiler:$dagger_version"
   implementation "androidx.datastore:datastore-preferences:$datastore_version"
   implementation("androidx.room:room-ktx:$room_version")
   implementation "androidx.work:work-runtime-ktx:$runtime_ktx_version"
@@ -89,17 +93,17 @@ dependencies {
   implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
   implementation "androidx.annotation:annotation:$annotation_version"
   annotationProcessor("androidx.room:room-compiler:$room_version")
-  kapt("androidx.room:room-compiler:$room_version")
+  ksp ("androidx.room:room-compiler:$room_version")
   implementation "androidx.room:room-runtime:$room_version"
   implementation "net.zetetic:android-database-sqlcipher:$sqlcipher_version"
-  implementation "androidx.sqlite:sqlite:$sqlite_version"
+  implementation "androidx.sqlite:sqlite-ktx:$sqlite_version"
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version")
-  implementation("androidx.navigation:navigation-fragment:$navigation_version")
-  implementation("androidx.navigation:navigation-ui:$navigation_version")
+  implementation("androidx.navigation:navigation-fragment-ktx:$navigation_version")
+  implementation("androidx.navigation:navigation-ui-ktx:$navigation_version")
   implementation("androidx.fragment:fragment-ktx:$fragment_version")
   implementation "com.anggrayudi:storage:$storage_version"
   implementation "androidx.hilt:hilt-work:$hilt_worker_version"
-  kapt "androidx.hilt:hilt-compiler:$hilt_worker_version"
+  ksp "androidx.hilt:hilt-compiler:$hilt_worker_version"
   // Kotlin
   implementation("androidx.navigation:navigation-fragment-ktx:$navigation_version")
   implementation("androidx.navigation:navigation-ui-ktx:$navigation_version")
@@ -125,9 +129,11 @@ dependencies {
   implementation "org.jetbrains.kotlinx:kotlinx-collections-immutable:$collections_version"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$serialization_version"
   implementation "com.google.dagger:hilt-android:$hilt_version"
-  kapt "com.google.dagger:hilt-compiler:$hilt_version"
+  ksp "com.google.dagger:hilt-compiler:$hilt_version"
   coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugaring_version"
-  debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.12'
+  debugImplementation "com.squareup.leakcanary:leakcanary-android:$leakcanary_version"
+  implementation "de.hdodenhof:circleimageview:$circleImageview_version"
+
 }
 
 kapt {
